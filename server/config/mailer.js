@@ -13,15 +13,15 @@ const createTransporter = async () => {
     console.log('   Email:', testAccount.user);
     console.log('   Пароль:', testAccount.pass);
     
-    const transporter = nodemailer.createTransport({
-    host: 'smtp.yandex.ru',
-    port: 465,
-    secure: true,
-    auth: {
-        user: 'kip-fin@yandex.ru',
-        pass: 'пароль_приложения'
-    }
-});
+    transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+        },
+    });
     
     return transporter;
 };

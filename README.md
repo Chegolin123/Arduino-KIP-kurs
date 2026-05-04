@@ -52,9 +52,3 @@
 ### Требования
 - Node.js 18+
 - MySQL 8+
-- OSPanel / XAMPP (для Windows)
-
-### 1. Клонирование репозитория
-```bash
-git clone https://github.com/Chegolin123/kip-fin-arduino.git
-cd kip-fin-arduino

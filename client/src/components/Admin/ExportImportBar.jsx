@@ -1,5 +1,5 @@
 // Расположение: C:\OSPanel\domains\Arduino\client\src\components\Admin\ExportImportBar.jsx
-// Панель экспорта/импорта — компактная версия
+// Панель экспорта/импорта — только DOCX
 
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -7,9 +7,8 @@ const ExportImportBar = ({
     onExportExcel, 
     onExportJson, 
     onImportExcel, 
-    onImportWord, 
-    onImportDocxFull,
-    onImportDocxFullBatch 
+    onImportDocx,
+    onImportDocxBatch 
 }) => {
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showImportMenu, setShowImportMenu] = useState(false);
@@ -63,16 +62,27 @@ const ExportImportBar = ({
                             📊 Excel
                             <input type="file" accept=".xlsx,.xls" onChange={(e) => { onImportExcel(e); setShowImportMenu(false); }} className="hidden" />
                         </label>
+                        
                         <label className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2">
-                            📄 Word
-                            <input type="file" accept=".docx,.doc" onChange={(e) => { onImportDocxFull ? onImportDocxFull(e) : onImportWord(e); setShowImportMenu(false); }} className="hidden" />
+                            📝 DOCX файл
+                            <input 
+                                type="file" 
+                                accept=".docx" 
+                                onChange={(e) => { onImportDocx(e); setShowImportMenu(false); }} 
+                                className="hidden" 
+                            />
                         </label>
-                        {onImportDocxFullBatch && (
-                            <label className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2">
-                                📄📄 Несколько Word
-                                <input type="file" accept=".docx,.doc" multiple onChange={(e) => { onImportDocxFullBatch(e); setShowImportMenu(false); }} className="hidden" />
-                            </label>
-                        )}
+                        
+                        <label className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2">
+                            📄📄 Несколько DOCX
+                            <input 
+                                type="file" 
+                                accept=".docx" 
+                                multiple 
+                                onChange={(e) => { onImportDocxBatch(e); setShowImportMenu(false); }} 
+                                className="hidden" 
+                            />
+                        </label>
                     </div>
                 )}
             </div>

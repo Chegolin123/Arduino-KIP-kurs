@@ -43,6 +43,16 @@ const AdminChapters = () => {
     setLoading(false);
   };
 
+  const loadSelectedChapter = async () => {
+    if (!selectedChapter) return;
+    try {
+      const res = await API.get(`/chapters/${selectedChapter.id}`);
+      if (res.data.chapter) setSelectedChapter(res.data.chapter);
+    } catch {
+      setSelectedChapter(null);
+    }
+  };
+
   const filteredChapters = selectedCourseId ? chapters.filter(ch => String(ch.course_id) === String(selectedCourseId)) : [];
 
   useEffect(() => {
@@ -109,7 +119,7 @@ const AdminChapters = () => {
       }
       await (editingSection ? API.put(`/sections/${editingSection.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }) : API.post('/sections', formData, { headers: { 'Content-Type': 'multipart/form-data' } }));
       resetSectionForm();
-      await loadData();
+      await Promise.all([loadData(), loadSelectedChapter()]);
     } catch (error) { alert('Ошибка сохранения раздела'); }
   };
 
@@ -126,19 +136,54 @@ const AdminChapters = () => {
     setShowSectionForm(true);
   };
 
-  const handleDeleteSection = async (id) => { if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); loadData(); } };
-  const handleDeleteImage = async (sectionId, imageIndex) => { await API.delete(`/sections/${sectionId}/images/${imageIndex}`); const res = await API.get(`/sections/${sectionId}`); setEditingSection(res.data.section); loadData(); };
+  const handleDeleteSection = async (id) => { if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); await Promise.all([loadData(), loadSelectedChapter()]); } };
+  const handleDeleteImage = async (sectionId, imageIndex) => { await API.delete(`/sections/${sectionId}/images/${imageIndex}`); const res = await API.get(`/sections/${sectionId}`); setEditingSection(res.data.section); await Promise.all([loadData(), loadSelectedChapter()]); };
 
   // Экспорт/Импорт
   const downloadBlob = (data, filename) => { const url = window.URL.createObjectURL(new Blob([data])); const link = document.createElement('a'); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); window.URL.revokeObjectURL(url); };
   const handleExportExcel = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/excel/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.xlsx`); };
   const handleExportWord = async (sectionId) => { const res = await API.get(`/sections/export/word/${sectionId}`, { responseType: 'blob' }); downloadBlob(res.data, `section_${sectionId}.doc`); };
   const handleExportJson = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/json/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.json`); };
-  const handleImportExcel = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
-  const handleImportWord = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); fd.append('chapter_id', selectedChapter.id); fd.append('title', file.name.replace(/\.(docx?|doc)$/, '')); const res = await API.post('/sections/import/word', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
-  const handleImportWordBatch = async (e) => { const files = e.target.files; if (!files.length || !selectedChapter) return; const fd = new FormData(); fd.append('chapter_id', selectedChapter.id); for (let i = 0; i < files.length; i++) fd.append('files', files[i]); const res = await API.post('/sections/import/word/batch', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
-  const handleImportDocxFull = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); fd.append('chapter_id', selectedChapter.id); fd.append('title', file.name.replace(/\.docx?$/, '')); try { const res = await API.post('/sections/import/docx/full', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); if (res.data.warnings?.length) console.warn('Предупреждения:', res.data.warnings); loadData(); } catch (error) { alert('Ошибка импорта DOCX'); } e.target.value = ''; };
-  const handleImportDocxFullBatch = async (e) => { const files = e.target.files; if (!files.length || !selectedChapter) return; const fd = new FormData(); fd.append('chapter_id', selectedChapter.id); for (let i = 0; i < files.length; i++) fd.append('files', files[i]); try { const res = await API.post('/sections/import/docx/full/batch', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); if (res.data.errors?.length) console.warn('Ошибки:', res.data.errors); loadData(); } catch (error) { alert('Ошибка импорта DOCX'); } e.target.value = ''; };
+  const handleImportExcel = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file);   const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, fd); alert(res.data.message); await Promise.all([loadData(), loadSelectedChapter()]); e.target.value = ''; };
+  
+  // Импорт одного DOCX
+  const handleImportDocx = async (e) => { 
+    const file = e.target.files[0]; 
+    if (!file || !selectedChapter) return; 
+    const fd = new FormData(); 
+    fd.append('file', file); 
+    fd.append('chapter_id', selectedChapter.id); 
+    fd.append('title', file.name.replace(/\.docx$/i, '')); 
+    try { 
+      const res = await API.post('/sections/import/docx', fd); 
+      alert(res.data.message); 
+      if (res.data.warnings?.length) console.warn('Предупреждения:', res.data.warnings); 
+      await Promise.all([loadData(), loadSelectedChapter()]);
+    } catch (error) { 
+      console.error('Ошибка импорта DOCX:', error);
+      alert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
+    } 
+    e.target.value = ''; 
+  };
+
+  // Пакетный импорт DOCX
+  const handleImportDocxBatch = async (e) => { 
+    const files = e.target.files; 
+    if (!files.length || !selectedChapter) return; 
+    const fd = new FormData(); 
+    fd.append('chapter_id', selectedChapter.id); 
+    for (let i = 0; i < files.length; i++) fd.append('files', files[i]); 
+    try { 
+      const res = await API.post('/sections/import/docx/batch', fd); 
+      alert(res.data.message); 
+      if (res.data.errors?.length) console.warn('Ошибки:', res.data.errors); 
+      await Promise.all([loadData(), loadSelectedChapter()]);
+    } catch (error) { 
+      console.error('Ошибка пакетного импорта DOCX:', error);
+      alert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
+    } 
+    e.target.value = ''; 
+  };
 
   const resetSectionForm = () => { setEditingSection(null); setSectionForm({ title: '', content: '', order_index: 0, video_url: '', images: null }); setShowSectionForm(false); };
 
@@ -170,10 +215,8 @@ const AdminChapters = () => {
                         onExportExcel={handleExportExcel} 
                         onExportJson={handleExportJson} 
                         onImportExcel={handleImportExcel} 
-                        onImportWord={handleImportWord} 
-                        onImportWordBatch={handleImportWordBatch} 
-                        onImportDocxFull={handleImportDocxFull} 
-                        onImportDocxFullBatch={handleImportDocxFullBatch} 
+                        onImportDocx={handleImportDocx} 
+                        onImportDocxBatch={handleImportDocxBatch} 
                       />
                       <button onClick={() => { resetSectionForm(); setShowSectionForm(true); }} className="px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-lg hover:bg-blue-900 transition-colors">+ Раздел</button>
                     </div>

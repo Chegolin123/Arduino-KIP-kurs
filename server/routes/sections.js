@@ -1,5 +1,5 @@
 // Расположение: C:\OSPanel\domains\Arduino\server\routes\sections.js
-// Роуты разделов с поддержкой медиа, экспорта, импорта Excel и Word
+// Роуты разделов с поддержкой медиа, экспорта, импорта Excel и Word (только .docx)
 
 const express = require('express');
 const router = express.Router();
@@ -12,8 +12,45 @@ const ExcelJS = require('exceljs');
 const mammoth = require('mammoth');
 const fs = require('fs');
 
-const uploadExcel = multer({ dest: 'uploads/excel/' });
-const uploadWord = multer({ dest: 'uploads/word/' });
+// Убедимся, что папки существуют
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+const excelDir = path.join(uploadsDir, 'excel');
+const wordDir = path.join(uploadsDir, 'word');
+
+[excelDir, wordDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
+
+const uploadExcel = multer({ 
+    dest: excelDir,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            file.mimetype === 'application/vnd.ms-excel') {
+            cb(null, true);
+        } else {
+            cb(new Error('Только Excel файлы (.xlsx, .xls)'), false);
+        }
+    }
+});
+
+const uploadWord = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, wordDir),
+        filename: (req, file, cb) => {
+            const uniqueName = Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.docx';
+            cb(null, uniqueName);
+        }
+    }),
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            cb(null, true);
+        } else {
+            cb(new Error('Только DOCX файлы'), false);
+        }
+    }
+});
 
 // Получение раздела по ID
 router.get('/:id', async (req, res) => {
@@ -276,6 +313,9 @@ router.get('/export/json/:chapterId', async (req, res) => {
 router.post('/import/excel/:chapterId', authenticateToken, isAdmin, uploadExcel.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'Файл не загружен' });
+        
+        console.log('📁 Excel файл загружен:', req.file.path);
+        
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.readFile(req.file.path);
         const worksheet = workbook.worksheets[0];
@@ -306,82 +346,35 @@ router.post('/import/excel/:chapterId', authenticateToken, isAdmin, uploadExcel.
         }
     } catch (error) {
         console.error('Ошибка импорта Excel:', error);
-        if (req.file) fs.unlink(req.file.path, () => {});
-        res.status(500).json({ success: false, message: 'Ошибка импорта' });
-    }
-});
-
-// Импорт раздела из Word
-router.post('/import/word', authenticateToken, isAdmin, uploadWord.single('file'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ success: false, message: 'Файл не загружен' });
-        const { chapter_id, order_index, title } = req.body;
-        if (!chapter_id) return res.status(400).json({ success: false, message: 'Укажите chapter_id' });
-        const result = await mammoth.convertToHtml({ path: req.file.path });
-        const html = result.value;
-        const sectionTitle = title || req.file.originalname.replace(/\.(docx?|doc)$/i, '');
-        const connection = await pool.getConnection();
-        try {
-            const media = { video: null, images: [] };
-            const [insertResult] = await connection.query(
-                'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
-                [chapter_id, sectionTitle, html, JSON.stringify(media), order_index || 0]
-            );
-            fs.unlink(req.file.path, () => {});
-            res.json({ success: true, message: 'Раздел импортирован из Word', section: { id: insertResult.insertId, chapter_id, title: sectionTitle, content: html } });
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Ошибка импорта Word:', error);
-        if (req.file) fs.unlink(req.file.path, () => {});
-        res.status(500).json({ success: false, message: 'Ошибка импорта' });
-    }
-});
-
-// Пакетный импорт разделов из Word
-router.post('/import/word/batch', authenticateToken, isAdmin, uploadWord.array('files', 20), async (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'Файлы не загружены' });
-        const { chapter_id } = req.body;
-        if (!chapter_id) return res.status(400).json({ success: false, message: 'Укажите chapter_id' });
-        const connection = await pool.getConnection();
-        const imported = [];
-        try {
-            for (let i = 0; i < req.files.length; i++) {
-                const file = req.files[i];
-                const result = await mammoth.convertToHtml({ path: file.path });
-                const html = result.value;
-                const sectionTitle = file.originalname.replace(/\.(docx?|doc)$/i, '');
-                const media = { video: null, images: [] };
-                const [insertResult] = await connection.query(
-                    'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
-                    [chapter_id, sectionTitle, html, JSON.stringify(media), i + 1]
-                );
-                imported.push({ id: insertResult.insertId, title: sectionTitle, filename: file.originalname });
-                fs.unlink(file.path, () => {});
-            }
-            res.json({ success: true, message: `Импортировано ${imported.length} разделов`, sections: imported });
-        } finally {
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Ошибка пакетного импорта Word:', error);
-        if (req.files) req.files.forEach(f => fs.unlink(f.path, () => {}));
-        res.status(500).json({ success: false, message: 'Ошибка импорта' });
+        if (req.file && fs.existsSync(req.file.path)) fs.unlink(req.file.path, () => {});
+        res.status(500).json({ success: false, message: 'Ошибка импорта: ' + error.message });
     }
 });
 
 // Импорт DOCX с полным сохранением форматирования
-router.post('/import/docx/full', authenticateToken, isAdmin, uploadWord.single('file'), async (req, res) => {
+router.post('/import/docx', authenticateToken, isAdmin, uploadWord.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'Файл не загружен' });
         }
+        
         const { chapter_id, order_index, title } = req.body;
         if (!chapter_id) {
             return res.status(400).json({ success: false, message: 'Укажите chapter_id' });
         }
+        
+        console.log('📁 DOCX файл загружен:', req.file.path);
+        console.log('📝 Имя файла:', req.file.originalname);
+        console.log('📏 Размер файла:', req.file.size, 'байт');
+        
+        const fileBuffer = fs.readFileSync(req.file.path);
+        
+        // Валидация: DOCX — это ZIP-архив, начинается с PK\u0003\u0004
+        if (fileBuffer.slice(0, 2).toString() !== 'PK') {
+            fs.unlink(req.file.path, () => {});
+            return res.status(400).json({ success: false, message: 'Файл не является валидным DOCX (архив ZIP)' });
+        }
+        
         const options = {
             styleMap: [
                 "p[style-name='Heading 1'] => h1:fresh",
@@ -398,19 +391,23 @@ router.post('/import/docx/full', authenticateToken, isAdmin, uploadWord.single('
                 const imageBuffer = await image.read();
                 const extension = image.contentType.split('/')[1] || 'png';
                 const filename = `imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${extension}`;
-                const imagePath = path.join(__dirname, '..', 'uploads', filename);
+                const imagePath = path.join(uploadsDir, filename);
                 await fs.promises.writeFile(imagePath, imageBuffer);
                 return { src: `/uploads/${filename}` };
             })
         };
-        const result = await mammoth.convertToHtml(options, { path: req.file.path });
+        
+        const result = await mammoth.convertToHtml({ path: req.file.path }, options);
         let html = result.value;
+        
         const wordStyles = `<style>.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0;color:#1a1a1a}.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0;color:#2d2d2d}.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0;color:#404040}.doc-content p{margin:0 0 6pt 0;text-align:justify}.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}.doc-content th{background-color:#f5f5f5;font-weight:bold}.doc-content ul,.doc-content ol{margin:6pt 0 6pt 20pt}.doc-content li{margin-bottom:3pt}.doc-content img{max-width:100%;height:auto;margin:8pt 0}.doc-content strong{font-weight:bold}.doc-content em{font-style:italic}.doc-content u{text-decoration:underline}.doc-content .indent{text-indent:1.25cm}</style>`;
         html = `<div class="doc-content">${wordStyles}${html}</div>`;
+        
         if (result.messages.length > 0) {
             console.log('⚠️ Предупреждения конвертации:', result.messages);
         }
-        const sectionTitle = title || req.file.originalname.replace(/\.(docx?|doc)$/i, '');
+        
+        const sectionTitle = title || req.file.originalname.replace(/\.docx$/i, '');
         const connection = await pool.getConnection();
         try {
             const media = { video: null, images: [] };
@@ -418,39 +415,56 @@ router.post('/import/docx/full', authenticateToken, isAdmin, uploadWord.single('
                 'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
                 [chapter_id, sectionTitle, html, JSON.stringify(media), order_index || 0]
             );
+            
+            console.log('✅ Раздел создан с полным форматированием, ID:', insertResult.insertId);
+            
+            // Удаляем временный файл
             fs.unlink(req.file.path, () => {});
+            
             res.json({
                 success: true,
-                message: 'Раздел импортирован из Word с полным форматированием',
+                message: 'Раздел импортирован из DOCX с полным форматированием',
                 section: { id: insertResult.insertId, chapter_id, title: sectionTitle, content: html, warnings: result.messages }
             });
         } finally {
             connection.release();
         }
     } catch (error) {
-        console.error('Ошибка импорта DOCX:', error);
-        if (req.file) fs.unlink(req.file.path, () => {});
+        console.error('❌ Ошибка импорта DOCX:', error);
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlink(req.file.path, () => {});
+        }
         res.status(500).json({ success: false, message: 'Ошибка импорта: ' + error.message });
     }
 });
 
 // Пакетный импорт DOCX с полным форматированием
-router.post('/import/docx/full/batch', authenticateToken, isAdmin, uploadWord.array('files', 20), async (req, res) => {
+router.post('/import/docx/batch', authenticateToken, isAdmin, uploadWord.array('files', 20), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ success: false, message: 'Файлы не загружены' });
         }
+        
         const { chapter_id } = req.body;
         if (!chapter_id) {
             return res.status(400).json({ success: false, message: 'Укажите chapter_id' });
         }
+        
+        console.log(`📁 Получено DOCX файлов: ${req.files.length}`);
+        
         const connection = await pool.getConnection();
         const imported = [];
         const errors = [];
+        
         try {
             for (let i = 0; i < req.files.length; i++) {
                 const file = req.files[i];
                 try {
+                    console.log(`📄 Обработка файла ${i + 1}/${req.files.length}: ${file.originalname}`);
+                    
+                    // Читаем файл как буфер
+                    const fileBuffer = fs.readFileSync(file.path);
+                    
                     const options = {
                         styleMap: [
                             "p[style-name='Heading 1'] => h1:fresh",
@@ -463,24 +477,34 @@ router.post('/import/docx/full/batch', authenticateToken, isAdmin, uploadWord.ar
                             const imageBuffer = await image.read();
                             const extension = image.contentType.split('/')[1] || 'png';
                             const filename = `imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${extension}`;
-                            await fs.promises.writeFile(path.join(__dirname, '..', 'uploads', filename), imageBuffer);
+                            await fs.promises.writeFile(path.join(uploadsDir, filename), imageBuffer);
                             return { src: `/uploads/${filename}` };
                         })
                     };
-                    const result = await mammoth.convertToHtml(options, { path: file.path });
+                    
+        const result = await mammoth.convertToHtml({ buffer: fileBuffer }, options);
                     const html = `<div class="doc-content"><style>.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0}.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0}.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0}.doc-content p{margin:0 0 6pt 0;text-align:justify}.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}.doc-content img{max-width:100%;height:auto;margin:8pt 0}</style>${result.value}</div>`;
-                    const sectionTitle = file.originalname.replace(/\.(docx?|doc)$/i, '');
+                    
+                    const sectionTitle = file.originalname.replace(/\.docx$/i, '');
                     const media = { video: null, images: [] };
                     const [insertResult] = await connection.query(
                         'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
                         [chapter_id, sectionTitle, html, JSON.stringify(media), i + 1]
                     );
+                    
                     imported.push({ id: insertResult.insertId, title: sectionTitle, filename: file.originalname });
+                    
                 } catch (fileError) {
+                    console.error(`❌ Ошибка обработки файла ${file.originalname}:`, fileError);
                     errors.push({ file: file.originalname, error: fileError.message });
                 }
-                fs.unlink(file.path, () => {});
+                
+                // Удаляем временный файл
+                if (fs.existsSync(file.path)) {
+                    fs.unlink(file.path, () => {});
+                }
             }
+            
             res.json({
                 success: true,
                 message: `Импортировано ${imported.length} из ${req.files.length} разделов`,
@@ -491,8 +515,10 @@ router.post('/import/docx/full/batch', authenticateToken, isAdmin, uploadWord.ar
             connection.release();
         }
     } catch (error) {
-        console.error('Ошибка пакетного импорта DOCX:', error);
-        if (req.files) req.files.forEach(f => fs.unlink(f.path, () => {}));
+        console.error('❌ Ошибка пакетного импорта DOCX:', error);
+        if (req.files) req.files.forEach(f => {
+            if (fs.existsSync(f.path)) fs.unlink(f.path, () => {});
+        });
         res.status(500).json({ success: false, message: 'Ошибка импорта: ' + error.message });
     }
 });

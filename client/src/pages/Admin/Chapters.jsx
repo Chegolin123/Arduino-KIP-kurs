@@ -1,4 +1,5 @@
 // Расположение: C:\OSPanel\domains\Arduino\client\src\pages\Admin\Chapters.jsx
+// Управление главами и разделами
 
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -33,33 +34,19 @@ const AdminChapters = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [chaptersRes, coursesRes] = await Promise.all([
-      API.get('/chapters'),
-      API.get('/courses/admin')
-    ]);
+    const [chaptersRes, coursesRes] = await Promise.all([API.get('/chapters'), API.get('/courses/admin')]);
     const allChapters = chaptersRes.data.chapters || [];
     const allCourses = coursesRes.data.courses || [];
     setChapters(allChapters);
     setCourses(allCourses);
-    
-    // Если нет выбранного курса — выбираем первый
-    if (!selectedCourseId && allCourses.length > 0) {
-      setSelectedCourseId(String(allCourses[0].id));
-    }
-    
+    if (!selectedCourseId && allCourses.length > 0) setSelectedCourseId(String(allCourses[0].id));
     setLoading(false);
   };
 
-  // Фильтрация глав по курсу
-  const filteredChapters = selectedCourseId
-    ? chapters.filter(ch => String(ch.course_id) === String(selectedCourseId))
-    : [];
+  const filteredChapters = selectedCourseId ? chapters.filter(ch => String(ch.course_id) === String(selectedCourseId)) : [];
 
-  // Если выбранная глава не в отфильтрованном списке — сбрасываем
   useEffect(() => {
-    if (selectedChapter && !filteredChapters.find(ch => ch.id === selectedChapter.id)) {
-      setSelectedChapter(null);
-    }
+    if (selectedChapter && !filteredChapters.find(ch => ch.id === selectedChapter.id)) setSelectedChapter(null);
   }, [filteredChapters]);
 
   // Главы
@@ -67,76 +54,40 @@ const AdminChapters = () => {
     e.preventDefault();
     if (!chapterForm.title.trim()) return;
     if (!chapterForm.course_id) return alert('Выберите курс');
-    
     try {
-      const chapterData = {
-        title: chapterForm.title,
-        description: chapterForm.description,
-        order_index: 0
-      };
-
+      const chapterData = { title: chapterForm.title, description: chapterForm.description, order_index: 0 };
       if (editingChapter) {
         await API.put(`/chapters/${editingChapter.id}`, chapterData);
-        // Обновляем привязку к курсу
         if (chapterForm.course_id !== String(editingChapter.course_id)) {
-          if (editingChapter.course_id) {
-            await API.delete(`/courses/${editingChapter.course_id}/chapters/${editingChapter.id}`);
-          }
+          if (editingChapter.course_id) await API.delete(`/courses/${editingChapter.course_id}/chapters/${editingChapter.id}`);
           await API.post(`/courses/${chapterForm.course_id}/chapters/${editingChapter.id}`);
         }
       } else {
         const res = await API.post('/chapters', chapterData);
-        const chapterId = res.data.chapter.id;
-        
-        // Привязка к курсу
-        await API.post(`/courses/${chapterForm.course_id}/chapters/${chapterId}`);
-        
-        // Автосоздание разделов
+        await API.post(`/courses/${chapterForm.course_id}/chapters/${res.data.chapter.id}`);
         const count = parseInt(chapterForm.sectionsCount) || 0;
         for (let i = 1; i <= count; i++) {
-          await API.post('/sections', { chapter_id: chapterId, title: `Раздел ${i}`, content: '', order_index: i });
+          await API.post('/sections', { chapter_id: res.data.chapter.id, title: `Раздел ${i}`, content: '', order_index: i });
         }
       }
       resetChapterForm();
       await loadData();
-    } catch (error) { 
-      console.error(error);
-      alert('Ошибка сохранения главы'); 
-    }
+    } catch (error) { alert('Ошибка сохранения главы'); }
   };
 
   const handleEditChapter = (chapter) => {
     setEditingChapter(chapter);
-    setChapterForm({
-      title: chapter.title,
-      description: chapter.description || '',
-      sectionsCount: chapter.sections?.length || 0,
-      course_id: chapter.course_id || selectedCourseId || ''
-    });
+    setChapterForm({ title: chapter.title, description: chapter.description || '', sectionsCount: chapter.sections?.length || 0, course_id: chapter.course_id || selectedCourseId || '' });
     setSelectedChapter(null);
     setShowSectionForm(false);
   };
 
   const handleDeleteChapter = async (id) => {
-    if (window.confirm('Удалить главу и все её разделы?')) {
-      await API.delete(`/chapters/${id}`);
-      if (selectedChapter?.id === id) setSelectedChapter(null);
-      loadData();
-    }
+    if (window.confirm('Удалить главу?')) { await API.delete(`/chapters/${id}`); if (selectedChapter?.id === id) setSelectedChapter(null); loadData(); }
   };
 
-  const resetChapterForm = () => {
-    setEditingChapter(null);
-    setChapterForm({ title: '', description: '', sectionsCount: 0, course_id: selectedCourseId || '' });
-  };
-
-  // При смене курса в фильтре
-  const handleCourseChange = (courseId) => {
-    setSelectedCourseId(courseId);
-    setSelectedChapter(null);
-    resetChapterForm();
-    setChapterForm(prev => ({ ...prev, course_id: courseId }));
-  };
+  const resetChapterForm = () => { setEditingChapter(null); setChapterForm({ title: '', description: '', sectionsCount: 0, course_id: selectedCourseId || '' }); };
+  const handleCourseChange = (courseId) => { setSelectedCourseId(courseId); setSelectedChapter(null); resetChapterForm(); setChapterForm(prev => ({ ...prev, course_id: courseId })); };
 
   // Разделы
   const handleSaveSection = async (e) => {
@@ -148,25 +99,15 @@ const AdminChapters = () => {
       formData.append('content', sectionForm.content);
       formData.append('order_index', sectionForm.order_index);
       formData.append('chapter_id', selectedChapter.id);
-      
       if (sectionForm.video_url !== undefined) {
-        if (!sectionForm.video_url.trim()) {
-          formData.append('clear_video', 'true');
-          formData.append('video_url', '');
-        } else {
-          formData.append('video_url', sectionForm.video_url);
-        }
+        if (!sectionForm.video_url.trim()) { formData.append('clear_video', 'true'); formData.append('video_url', ''); }
+        else formData.append('video_url', sectionForm.video_url);
       }
-
       if (sectionForm.images && sectionForm.images.length > 0) {
         formData.append('keep_existing_images', 'true');
         for (let i = 0; i < sectionForm.images.length; i++) formData.append('images', sectionForm.images[i]);
       }
-
-      await (editingSection
-        ? API.put(`/sections/${editingSection.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-        : API.post('/sections', formData, { headers: { 'Content-Type': 'multipart/form-data' } }));
-      
+      await (editingSection ? API.put(`/sections/${editingSection.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }) : API.post('/sections', formData, { headers: { 'Content-Type': 'multipart/form-data' } }));
       resetSectionForm();
       await loadData();
     } catch (error) { alert('Ошибка сохранения раздела'); }
@@ -185,59 +126,21 @@ const AdminChapters = () => {
     setShowSectionForm(true);
   };
 
-  const handleDeleteSection = async (id) => {
-    if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); loadData(); }
-  };
+  const handleDeleteSection = async (id) => { if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); loadData(); } };
+  const handleDeleteImage = async (sectionId, imageIndex) => { await API.delete(`/sections/${sectionId}/images/${imageIndex}`); const res = await API.get(`/sections/${sectionId}`); setEditingSection(res.data.section); loadData(); };
 
-  const handleDeleteImage = async (sectionId, imageIndex) => {
-    await API.delete(`/sections/${sectionId}/images/${imageIndex}`);
-    const res = await API.get(`/sections/${sectionId}`);
-    setEditingSection(res.data.section);
-    loadData();
-  };
+  // Экспорт/Импорт
+  const downloadBlob = (data, filename) => { const url = window.URL.createObjectURL(new Blob([data])); const link = document.createElement('a'); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); window.URL.revokeObjectURL(url); };
+  const handleExportExcel = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/excel/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.xlsx`); };
+  const handleExportWord = async (sectionId) => { const res = await API.get(`/sections/export/word/${sectionId}`, { responseType: 'blob' }); downloadBlob(res.data, `section_${sectionId}.doc`); };
+  const handleExportJson = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/json/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.json`); };
+  const handleImportExcel = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
+  const handleImportWord = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); fd.append('chapter_id', selectedChapter.id); fd.append('title', file.name.replace(/\.(docx?|doc)$/, '')); const res = await API.post('/sections/import/word', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
+  const handleImportWordBatch = async (e) => { const files = e.target.files; if (!files.length || !selectedChapter) return; const fd = new FormData(); fd.append('chapter_id', selectedChapter.id); for (let i = 0; i < files.length; i++) fd.append('files', files[i]); const res = await API.post('/sections/import/word/batch', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); loadData(); e.target.value = ''; };
+  const handleImportDocxFull = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file); fd.append('chapter_id', selectedChapter.id); fd.append('title', file.name.replace(/\.docx?$/, '')); try { const res = await API.post('/sections/import/docx/full', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); if (res.data.warnings?.length) console.warn('Предупреждения:', res.data.warnings); loadData(); } catch (error) { alert('Ошибка импорта DOCX'); } e.target.value = ''; };
+  const handleImportDocxFullBatch = async (e) => { const files = e.target.files; if (!files.length || !selectedChapter) return; const fd = new FormData(); fd.append('chapter_id', selectedChapter.id); for (let i = 0; i < files.length; i++) fd.append('files', files[i]); try { const res = await API.post('/sections/import/docx/full/batch', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); alert(res.data.message); if (res.data.errors?.length) console.warn('Ошибки:', res.data.errors); loadData(); } catch (error) { alert('Ошибка импорта DOCX'); } e.target.value = ''; };
 
-  // Экспорт/импорт
-  const downloadBlob = (data, filename) => {
-    const url = window.URL.createObjectURL(new Blob([data]));
-    const link = document.createElement('a');
-    link.href = url; link.download = filename;
-    document.body.appendChild(link); link.click(); link.remove();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const handleExportExcel = async () => {
-    if (!selectedChapter) return;
-    const res = await API.get(`/sections/export/excel/${selectedChapter.id}`, { responseType: 'blob' });
-    downloadBlob(res.data, `chapter_${selectedChapter.id}.xlsx`);
-  };
-
-  const handleExportWord = async (sectionId) => {
-    const res = await API.get(`/sections/export/word/${sectionId}`, { responseType: 'blob' });
-    downloadBlob(res.data, `section_${sectionId}.doc`);
-  };
-
-  const handleExportJson = async () => {
-    if (!selectedChapter) return;
-    const res = await API.get(`/sections/export/json/${selectedChapter.id}`, { responseType: 'blob' });
-    downloadBlob(res.data, `chapter_${selectedChapter.id}.json`);
-  };
-
-  const handleImportExcel = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !selectedChapter) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-    alert(res.data.message);
-    loadData();
-    e.target.value = '';
-  };
-
-  const resetSectionForm = () => {
-    setEditingSection(null);
-    setSectionForm({ title: '', content: '', order_index: 0, video_url: '', images: null });
-    setShowSectionForm(false);
-  };
+  const resetSectionForm = () => { setEditingSection(null); setSectionForm({ title: '', content: '', order_index: 0, video_url: '', images: null }); setShowSectionForm(false); };
 
   if (!user || user.role !== 'admin') return null;
 
@@ -245,96 +148,44 @@ const AdminChapters = () => {
     <div className="bg-gray-50 flex-1">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Левая колонка */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Фильтр по курсу */}
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <label className="block text-xs font-medium text-gray-600 mb-2">Курс</label>
-              <select
-                value={selectedCourseId}
-                onChange={(e) => handleCourseChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              >
+              <select value={selectedCourseId} onChange={(e) => handleCourseChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 {courses.length === 0 && <option value="">Нет курсов</option>}
-                {courses.map(course => (
-                  <option key={course.id} value={course.id}>{course.title}</option>
-                ))}
+                {courses.map(course => <option key={course.id} value={course.id}>{course.title}</option>)}
               </select>
             </div>
-
-            <ChapterForm
-              form={chapterForm}
-              onChange={setChapterForm}
-              onSubmit={handleSaveChapter}
-              onCancel={resetChapterForm}
-              isEditing={!!editingChapter}
-              courses={courses}
-              selectedCourseId={selectedCourseId}
-            />
-
-            <ChapterList
-              chapters={filteredChapters}
-              selectedId={selectedChapter?.id}
-              loading={loading}
-              onSelect={setSelectedChapter}
-              onEdit={handleEditChapter}
-              onDelete={handleDeleteChapter}
-            />
+            <ChapterForm form={chapterForm} onChange={setChapterForm} onSubmit={handleSaveChapter} onCancel={resetChapterForm} isEditing={!!editingChapter} courses={courses} selectedCourseId={selectedCourseId} />
+            <ChapterList chapters={filteredChapters} selectedId={selectedChapter?.id} loading={loading} onSelect={setSelectedChapter} onEdit={handleEditChapter} onDelete={handleDeleteChapter} />
           </div>
-
-          {/* Правая колонка */}
           <div className="lg:col-span-2">
             {selectedChapter ? (
               <>
                 <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
                   <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h2 className="font-semibold text-gray-900">{selectedChapter.title}</h2>
-                      <p className="text-sm text-gray-500 mt-1">{selectedChapter.sections?.length || 0} разделов</p>
-                    </div>
-                    
+                    <div><h2 className="font-semibold text-gray-900">{selectedChapter.title}</h2><p className="text-sm text-gray-500 mt-1">{selectedChapter.sections?.length || 0} разделов</p></div>
                     <div className="flex items-center gap-2">
-                      <ExportImportBar
-                        onExportExcel={handleExportExcel}
-                        onExportJson={handleExportJson}
-                        onImportExcel={handleImportExcel}
+                      <ExportImportBar 
+                        onExportExcel={handleExportExcel} 
+                        onExportJson={handleExportJson} 
+                        onImportExcel={handleImportExcel} 
+                        onImportWord={handleImportWord} 
+                        onImportWordBatch={handleImportWordBatch} 
+                        onImportDocxFull={handleImportDocxFull} 
+                        onImportDocxFullBatch={handleImportDocxFullBatch} 
                       />
-                      <button onClick={() => { resetSectionForm(); setShowSectionForm(true); }}
-                        className="px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-lg hover:bg-blue-900 transition-colors">
-                        + Раздел
-                      </button>
+                      <button onClick={() => { resetSectionForm(); setShowSectionForm(true); }} className="px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-lg hover:bg-blue-900 transition-colors">+ Раздел</button>
                     </div>
                   </div>
-
-                  {showSectionForm && (
-                    <SectionForm
-                      form={sectionForm}
-                      onChange={setSectionForm}
-                      onSubmit={handleSaveSection}
-                      onCancel={resetSectionForm}
-                      isEditing={!!editingSection}
-                      existingMedia={editingSection?.media}
-                      onDeleteImage={(idx) => handleDeleteImage(editingSection.id, idx)}
-                    />
-                  )}
+                  {showSectionForm && <SectionForm form={sectionForm} onChange={setSectionForm} onSubmit={handleSaveSection} onCancel={resetSectionForm} isEditing={!!editingSection} existingMedia={editingSection?.media} onDeleteImage={(idx) => handleDeleteImage(editingSection.id, idx)} />}
                 </div>
-
-                <SectionList
-                  sections={selectedChapter.sections}
-                  onExportWord={handleExportWord}
-                  onEdit={handleEditSection}
-                  onDelete={handleDeleteSection}
-                />
+                <SectionList sections={selectedChapter.sections} onExportWord={handleExportWord} onEdit={handleEditSection} onDelete={handleDeleteSection} />
               </>
             ) : (
               <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <h3 className="font-semibold text-gray-400 mb-2">
-                  {courses.length === 0 ? 'Нет курсов' : 'Выберите главу'}
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  {courses.length === 0 ? 'Сначала создайте курс в разделе "Курсы"' : 'Выберите главу слева для просмотра разделов'}
-                </p>
+                <h3 className="font-semibold text-gray-400 mb-2">{courses.length === 0 ? 'Нет курсов' : 'Выберите главу'}</h3>
+                <p className="text-gray-400 text-sm">{courses.length === 0 ? 'Создайте курс в разделе "Курсы"' : 'Выберите главу слева'}</p>
               </div>
             )}
           </div>

@@ -50,7 +50,7 @@ const generateToken = (user) => {
             role: user.role 
         },
         process.env.JWT_SECRET,
-        { expiresIn: '7d' } // Увеличил до 7 дней
+        { expiresIn: '7d' }
     );
 };
 

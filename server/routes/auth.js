@@ -42,23 +42,35 @@ router.post('/register', [
             const passwordHash = await bcrypt.hash(password, salt);
             const verificationToken = crypto.randomBytes(32).toString('hex');
 
+            // Проверяем настройку верификации
+            const [settings] = await connection.query(
+                'SELECT setting_value FROM settings WHERE setting_key = ?',
+                ['require_email_verification']
+            );
+            const requireVerification = settings.length > 0 ? settings[0].setting_value === 'true' : true;
+
             const [result] = await connection.query(
                 'INSERT INTO users (username, email, password_hash, role, institution, student_group, verification_token, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [username, email, passwordHash, 'user', institution || null, student_group || null, verificationToken, false]
+                [username, email, passwordHash, 'user', institution || null, student_group || null, requireVerification ? verificationToken : null, !requireVerification]
             );
 
-            console.log('✅ Пользователь создан, токен:', verificationToken);
+            console.log('✅ Пользователь создан, верификация:', requireVerification ? 'требуется' : 'отключена');
 
-            try {
-                await sendVerificationEmail(email, username, verificationToken);
-            } catch (emailError) {
-                console.error('Ошибка отправки письма:', emailError);
+            if (requireVerification) {
+                try {
+                    await sendVerificationEmail(email, username, verificationToken);
+                } catch (emailError) {
+                    console.error('Ошибка отправки письма:', emailError);
+                }
             }
 
             res.status(201).json({
                 success: true,
-                message: 'Регистрация успешна. Проверьте почту для подтверждения email.',
-                userId: result.insertId
+                message: requireVerification 
+                    ? 'Регистрация успешна. Проверьте почту для подтверждения email.' 
+                    : 'Регистрация успешна. Можете войти.',
+                userId: result.insertId,
+                requireVerification
             });
 
         } finally {
@@ -200,7 +212,14 @@ router.post('/login', [
                 return res.status(401).json({ success: false, message: 'Неверный email или пароль' });
             }
 
-            if (!user.email_verified) {
+            // Проверяем настройку верификации
+            const [settings] = await connection.query(
+                'SELECT setting_value FROM settings WHERE setting_key = ?',
+                ['require_email_verification']
+            );
+            const requireVerification = settings.length > 0 ? settings[0].setting_value === 'true' : true;
+
+            if (requireVerification && !user.email_verified) {
                 return res.status(403).json({ 
                     success: false, 
                     message: 'Email не подтверждён. Проверьте почту.',

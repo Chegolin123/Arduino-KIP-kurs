@@ -1,10 +1,15 @@
 // Расположение: C:\OSPanel\domains\Arduino\server\server.js
 // Главный файл сервера КИП ФИН
 
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Проверка загрузки переменных
+console.log('MAIL_USER:', process.env.MAIL_USER || 'НЕ ЗАГРУЖЕН');
+console.log('MAIL_PASS:', process.env.MAIL_PASS ? '***' : 'НЕ ЗАГРУЖЕН');
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
 
 const { initializeDatabase } = require('./config/database');
 
@@ -14,6 +19,7 @@ const sectionsRoutes = require('./routes/sections');
 const productsRoutes = require('./routes/products');
 const testsRoutes = require('./routes/tests');
 const coursesRoutes = require('./routes/courses');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +35,7 @@ app.use('/api/sections', sectionsRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/tests', testsRoutes);
 app.use('/api/courses', coursesRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/', (req, res) => {
     res.json({ 
@@ -40,7 +47,8 @@ app.get('/', (req, res) => {
             sections: '/api/sections',
             products: '/api/products',
             tests: '/api/tests',
-            courses: '/api/courses'
+            courses: '/api/courses',
+            settings: '/api/settings'
         }
     });
 });

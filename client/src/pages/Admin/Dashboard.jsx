@@ -12,12 +12,14 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({ 
     chapters: 0, sections: 0, products: 0, users: 0, students: 0, admins: 0
   });
+  const [requireVerification, setRequireVerification] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
       navigate('/login');
     } else {
       loadStats();
+      loadSettings();
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -46,12 +48,33 @@ const AdminDashboard = () => {
     }
   };
 
+  const loadSettings = async () => {
+    try {
+      const res = await API.get('/settings');
+      setRequireVerification(res.data.settings.require_email_verification === 'true');
+    } catch (error) {
+      console.error('Ошибка загрузки настроек:', error);
+    }
+  };
+
+  const toggleVerification = async () => {
+    const newValue = !requireVerification;
+    try {
+      await API.put('/settings/require_email_verification', { value: String(newValue) });
+      setRequireVerification(newValue);
+    } catch (error) {
+      alert('Ошибка обновления настройки');
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const cards = [
-    { title: 'Управление курсом', desc: 'Добавление и редактирование глав и разделов', link: '/admin/chapters', icon: '📚', color: 'bg-blue-500' },
-    { title: 'Управление каталогом', desc: 'Добавление и редактирование товаров', link: '/admin/products', icon: '🔧', color: 'bg-purple-500' },
-    { title: 'Студенты', desc: 'Просмотр профилей и статистики студентов', link: '/admin/users', icon: '👥', color: 'bg-green-500' },
+    { title: 'Управление курсами', desc: 'Создание и редактирование курсов', link: '/admin/courses', icon: '📚', color: 'bg-blue-500' },
+    { title: 'Управление главами', desc: 'Добавление глав и разделов', link: '/admin/chapters', icon: '📝', color: 'bg-indigo-500' },
+    { title: 'Управление тестами', desc: 'Создание тестов для глав', link: '/admin/tests', icon: '✅', color: 'bg-purple-500' },
+    { title: 'Управление каталогом', desc: 'Добавление и редактирование товаров', link: '/admin/products', icon: '🔧', color: 'bg-orange-500' },
+    { title: 'Студенты', desc: 'Просмотр профилей и статистики', link: '/admin/users', icon: '👥', color: 'bg-green-500' },
   ];
 
   return (
@@ -85,7 +108,35 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Карточка настройки верификации */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">📧</div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Подтверждение почты</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {requireVerification 
+                    ? 'Новые пользователи должны подтверждать email перед входом' 
+                    : 'Пользователи могут входить сразу после регистрации'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={toggleVerification}
+              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                requireVerification 
+                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+            >
+              {requireVerification ? '✅ Включено' : '⏸️ Отключено'}
+            </button>
+          </div>
+        </div>
+
+        {/* Быстрые действия */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map((card, idx) => (
             <Link
               key={idx}

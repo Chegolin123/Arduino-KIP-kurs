@@ -16,8 +16,9 @@ const AdminTests = () => {
   const [editingTest, setEditingTest] = useState(null);
   const [searchChapter, setSearchChapter] = useState('');
   const [filterCourse, setFilterCourse] = useState('');
+  const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
-    chapter_id: '', section_id: '', title: '', description: '', pass_percent: 70,
+    chapter_id: '', title: '', description: '', pass_percent: 70,
     questions: []
   });
 
@@ -66,7 +67,6 @@ const AdminTests = () => {
         setEditingTest(res.data.test);
         setForm({
           chapter_id: res.data.test.chapter_id || '',
-          section_id: res.data.test.section_id || '',
           title: res.data.test.title || '',
           description: res.data.test.description || '',
           pass_percent: res.data.test.pass_percent || 70,
@@ -75,7 +75,7 @@ const AdminTests = () => {
       } else {
         setEditingTest(null);
         setForm({
-          chapter_id: chapterId, section_id: '', title: '', description: '', pass_percent: 70, questions: []
+          chapter_id: chapterId, title: '', description: '', pass_percent: 70, questions: []
         });
       }
       setShowForm(true);
@@ -85,10 +85,11 @@ const AdminTests = () => {
   };
 
   const addQuestion = () => {
+    setFormError('');
     setForm({
       ...form,
       questions: [...form.questions, { question: '', type: 'single', answers: [
-        { answer: '', is_correct: false },
+        { answer: '', is_correct: true },
         { answer: '', is_correct: false },
       ]}]
     });
@@ -126,15 +127,51 @@ const AdminTests = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return alert('Введите название теста');
-    if (!form.chapter_id && !form.section_id) return alert('Выберите главу');
-    if (form.questions.length === 0) return alert('Добавьте хотя бы один вопрос');
+    const title = form.title.trim();
+    if (!title) {
+      setFormError('Введите название теста');
+      return;
+    }
+    if (!form.chapter_id) {
+      setFormError('Выберите главу');
+      return;
+    }
+    if (form.questions.length === 0) {
+      setFormError('Добавьте хотя бы один вопрос');
+      return;
+    }
+
+    for (let qIdx = 0; qIdx < form.questions.length; qIdx++) {
+      const question = form.questions[qIdx];
+      if (!question.question.trim()) {
+        setFormError(`Заполните текст вопроса ${qIdx + 1}`);
+        return;
+      }
+      if (!Array.isArray(question.answers) || question.answers.length < 2) {
+        setFormError(`У вопроса ${qIdx + 1} должно быть минимум 2 варианта ответа`);
+        return;
+      }
+      if (question.answers.some((answer) => !String(answer.answer || '').trim())) {
+        setFormError(`Заполните все варианты ответа у вопроса ${qIdx + 1}`);
+        return;
+      }
+      const correctAnswers = question.answers.filter((answer) => answer.is_correct);
+      if (correctAnswers.length === 0) {
+        setFormError(`Выберите хотя бы один правильный ответ у вопроса ${qIdx + 1}`);
+        return;
+      }
+      if (question.type === 'single' && correctAnswers.length !== 1) {
+        setFormError(`У вопроса ${qIdx + 1} с одним правильным ответом должна быть выбрана ровно одна опция`);
+        return;
+      }
+    }
+
+    setFormError('');
 
     try {
       await API.post('/tests/manage', {
         chapter_id: form.chapter_id || null,
-        section_id: form.section_id || null,
-        title: form.title,
+        title,
         description: form.description,
         pass_percent: form.pass_percent,
         questions: form.questions
@@ -142,7 +179,8 @@ const AdminTests = () => {
       alert('Тест сохранён');
       resetForm();
     } catch (error) {
-      alert('Ошибка сохранения теста');
+      const message = error.response?.data?.message || 'Ошибка сохранения теста';
+      setFormError(message);
     }
   };
 
@@ -155,7 +193,8 @@ const AdminTests = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingTest(null);
-    setForm({ chapter_id: '', section_id: '', title: '', description: '', pass_percent: 70, questions: [] });
+    setFormError('');
+    setForm({ chapter_id: '', title: '', description: '', pass_percent: 70, questions: [] });
   };
 
   // Проверка, есть ли тест у главы
@@ -167,20 +206,36 @@ const AdminTests = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="bg-gray-50 flex-1">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="flex-1 min-h-screen" style={{
+      backgroundColor: '#f8fafc',
+      backgroundImage: `
+        linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+        radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+        url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+      `,
+      backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+      backgroundRepeat: 'repeat',
+      backgroundAttachment: 'fixed',
+    }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Админка</p>
+          <h1 className="text-3xl sm:text-4xl font-bold mt-2">Тесты</h1>
+          <p className="text-sm sm:text-base text-blue-100/90 mt-3 max-w-2xl">Поиск главы, создание вопросов и управление тестированием студентов.</p>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Левая колонка — список глав */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Главы</h3>
+            <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-4 shadow-sm">
+              <h3 className="font-semibold text-slate-900 mb-3">Главы</h3>
               
               {/* Фильтр по курсу */}
               <select
                 value={filterCourse}
                 onChange={(e) => setFilterCourse(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl mb-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
               >
                 <option value="">Все курсы</option>
                 {courses.map(c => (
@@ -195,30 +250,30 @@ const AdminTests = () => {
                   value={searchChapter}
                   onChange={(e) => setSearchChapter(e.target.value)}
                   placeholder="Поиск главы..."
-                  className="w-full pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                 />
-                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 {searchChapter && (
                   <button onClick={() => setSearchChapter('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">×</button>
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">×</button>
                 )}
               </div>
 
-              <p className="text-xs text-gray-400 mb-2">{filteredChapters.length} глав</p>
+              <p className="text-xs text-slate-400 mb-2">{filteredChapters.length} глав</p>
 
               {loading ? (
                 <div className="space-y-2 animate-pulse">
-                  {[1,2,3,4,5].map(n => <div key={n} className="h-12 bg-gray-100 rounded-lg" />)}
+                  {[1,2,3,4,5].map(n => <div key={n} className="h-12 bg-slate-100 rounded-xl" />)}
                 </div>
               ) : filteredChapters.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Ничего не найдено</p>
+                <p className="text-sm text-slate-400 text-center py-4">Ничего не найдено</p>
               ) : (
                 <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
                   {Object.entries(groupedChapters).map(([courseTitle, chs]) => (
                     <div key={courseTitle}>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 py-1">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider px-2 py-1">
                         {courseTitle}
                       </p>
                       <div className="space-y-0.5">
@@ -229,12 +284,12 @@ const AdminTests = () => {
                             className={`w-full text-left p-2.5 rounded-lg transition-colors border text-sm ${
                               form.chapter_id === String(ch.id)
                                 ? 'bg-blue-50 border-blue-300'
-                                : 'hover:bg-gray-50 border-transparent'
+                                : 'hover:bg-slate-50 border-transparent'
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-900 truncate">{ch.title}</span>
-                              <span className="text-xs text-gray-400 flex-shrink-0 ml-1">
+                              <span className="text-slate-900 truncate">{ch.title}</span>
+                              <span className="text-xs text-slate-400 flex-shrink-0 ml-1">
                                 {ch.sections?.length || 0} разд.
                               </span>
                             </div>
@@ -251,47 +306,53 @@ const AdminTests = () => {
           {/* Правая колонка — редактор теста */}
           <div className="lg:col-span-2">
             {!showForm ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <div className="text-5xl mb-4">📝</div>
-                <h3 className="font-semibold text-gray-500 mb-2">Выберите главу</h3>
-                <p className="text-gray-400 text-sm">Выберите главу слева для создания или редактирования теста</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Карточка теста */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
+                  <div className="text-5xl mb-4">📝</div>
+                  <h3 className="font-semibold text-slate-500 mb-2">Выберите главу</h3>
+                  <p className="text-slate-400 text-sm">Выберите главу слева для создания или редактирования теста</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Карточка теста */}
+                  <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-semibold text-gray-900">
-                      {editingTest ? 'Редактирование теста' : 'Новый тест'}
-                    </h2>
+                      <h2 className="font-semibold text-slate-900">
+                        {editingTest ? 'Редактирование теста' : 'Новый тест'}
+                      </h2>
                     <div className="flex gap-2">
                       {editingTest && (
                         <button type="button" onClick={() => handleDelete(form.chapter_id)}
-                          className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50">🗑 Удалить</button>
+                          className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-xl hover:bg-red-50">🗑 Удалить</button>
                       )}
                       <button type="button" onClick={resetForm}
-                        className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50">Закрыть</button>
+                        className="px-3 py-1.5 text-xs border border-slate-300 rounded-xl hover:bg-slate-50">Закрыть</button>
                     </div>
-                  </div>
+                    </div>
+
+                    {formError && (
+                      <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {formError}
+                      </div>
+                    )}
 
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Название теста</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Название теста</label>
                       <input type="text" value={form.title} onChange={(e) => setForm({...form, title: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Итоговый тест по главе" />
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white" placeholder="Итоговый тест по главе" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Проходной %</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Проходной %</label>
                       <input type="number" value={form.pass_percent} onChange={(e) => setForm({...form, pass_percent: parseInt(e.target.value) || 0})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" min="0" max="100" />
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white" min="0" max="100" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Привязан к главе</label>
-                      <select value={form.chapter_id} onChange={(e) => setForm({...form, chapter_id: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                       <label className="block text-xs font-medium text-slate-600 mb-1">Глава</label>
+                       <select value={form.chapter_id} onChange={(e) => setForm({...form, chapter_id: e.target.value})}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white">
                         <option value="">Выберите главу</option>
                         {courses.map(course => (
                           <optgroup key={course.id} label={course.title}>
@@ -303,38 +364,38 @@ const AdminTests = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Описание</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Описание</label>
                       <input type="text" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Необязательно" />
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white" placeholder="Необязательно" />
                     </div>
                   </div>
                 </div>
 
                 {/* Вопросы */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-900">Вопросы ({form.questions.length})</h3>
+                    <h3 className="font-semibold text-slate-900">Вопросы ({form.questions.length})</h3>
                     <button type="button" onClick={addQuestion}
-                      className="px-4 py-1.5 text-sm bg-blue-800 text-white rounded-lg hover:bg-blue-900">+ Добавить вопрос</button>
+                      className="px-4 py-1.5 text-sm bg-blue-900 text-white rounded-full hover:bg-blue-950 shadow-sm">+ Добавить вопрос</button>
                   </div>
 
                   {form.questions.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
+                    <div className="text-center py-12 text-slate-400">
                       <p>Нет вопросов</p>
                       <p className="text-sm mt-1">Нажмите «+ Добавить вопрос» чтобы создать</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {form.questions.map((q, qIdx) => (
-                        <div key={qIdx} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div key={qIdx} className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
                           <div className="flex justify-between items-start mb-3">
-                            <span className="text-sm font-semibold text-gray-700">Вопрос {qIdx + 1}</span>
+                            <span className="text-sm font-semibold text-slate-700">Вопрос {qIdx + 1}</span>
                             <button type="button" onClick={() => removeQuestion(qIdx)}
                               className="text-xs text-red-500 hover:text-red-700">✕</button>
                           </div>
 
                           <input type="text" value={q.question} onChange={(e) => updateQuestion(qIdx, 'question', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 bg-white"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm mb-3 bg-white"
                             placeholder="Введите текст вопроса" />
 
                           <div className="flex items-center gap-6 mb-3">
@@ -350,7 +411,7 @@ const AdminTests = () => {
                             </label>
                           </div>
 
-                          <p className="text-xs text-gray-500 mb-2">Варианты ответов (отметьте правильные):</p>
+                          <p className="text-xs text-slate-500 mb-2">Варианты ответов (отметьте правильные):</p>
                           <div className="space-y-2">
                             {q.answers.map((a, aIdx) => (
                               <div key={aIdx} className="flex items-center gap-2">
@@ -372,18 +433,18 @@ const AdminTests = () => {
                                   type="text"
                                   value={a.answer}
                                   onChange={(e) => updateAnswer(qIdx, aIdx, 'answer', e.target.value)}
-                                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm bg-white"
+                                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-sm bg-white"
                                   placeholder={`Вариант ${aIdx + 1}`}
                                 />
                                 {q.answers.length > 2 && (
                                   <button type="button" onClick={() => removeAnswer(qIdx, aIdx)}
-                                    className="text-gray-400 hover:text-red-500 text-lg leading-none">×</button>
+                                    className="text-slate-400 hover:text-red-500 text-lg leading-none">×</button>
                                 )}
                               </div>
                             ))}
                           </div>
                           <button type="button" onClick={() => addAnswer(qIdx)}
-                            className="text-xs text-blue-600 hover:text-blue-800 mt-2 font-medium">
+                            className="text-xs text-blue-700 hover:text-blue-900 mt-2 font-medium">
                             + Добавить вариант ответа
                           </button>
                         </div>
@@ -393,9 +454,9 @@ const AdminTests = () => {
                 </div>
 
                 {/* Кнопка сохранения */}
-                <div className="text-center">
-                  <button type="submit"
-                    className="px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-sm">
+                  <div className="text-center">
+                    <button type="submit"
+                    className="px-8 py-3 bg-green-600 text-white font-medium rounded-full hover:bg-green-700 transition-colors text-sm shadow-sm">
                     💾 Сохранить тест
                   </button>
                 </div>

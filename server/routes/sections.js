@@ -11,6 +11,7 @@ const multer = require('multer');
 const ExcelJS = require('exceljs');
 const mammoth = require('mammoth');
 const fs = require('fs');
+const { sanitizeHtml } = require('../utils/sanitizeHtml');
 
 // Убедимся, что папки существуют
 const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -77,6 +78,61 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Получение черновика раздела
+router.get('/:id/draft', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        try {
+            const [rows] = await connection.query('SELECT content FROM section_drafts WHERE section_id = ?', [req.params.id]);
+            res.json({ success: true, draft: rows[0]?.content || '' });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Ошибка получения черновика:', error);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
+// Сохранение черновика раздела
+router.put('/:id/draft', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { content } = req.body;
+        const safeContent = sanitizeHtml(content || '');
+        const connection = await pool.getConnection();
+        try {
+            await connection.query(
+                `INSERT INTO section_drafts (section_id, content, updated_by)
+                 VALUES (?, ?, ?)
+                 ON DUPLICATE KEY UPDATE content = VALUES(content), updated_by = VALUES(updated_by)`,
+                [req.params.id, safeContent, req.user?.id || null]
+            );
+            res.json({ success: true, message: 'Черновик сохранён', draft: safeContent });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения черновика:', error);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
+// Удаление черновика раздела
+router.delete('/:id/draft', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        try {
+            await connection.query('DELETE FROM section_drafts WHERE section_id = ?', [req.params.id]);
+            res.json({ success: true, message: 'Черновик удалён' });
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Ошибка удаления черновика:', error);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
 // Создание раздела (админ)
 router.post('/', authenticateToken, isAdmin, upload.array('images', 10), async (req, res) => {
     try {
@@ -90,19 +146,47 @@ router.post('/', authenticateToken, isAdmin, upload.array('images', 10), async (
             if (req.files && req.files.length > 0) {
                 media.images = req.files.map(file => `/uploads/${file.filename}`);
             }
+            const safeContent = sanitizeHtml(content || '');
             const [result] = await connection.query(
                 'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
-                [chapter_id, title, content || '', JSON.stringify(media), order_index || 0]
+                [chapter_id, title, safeContent, JSON.stringify(media), order_index || 0]
             );
             res.status(201).json({
                 success: true, message: 'Раздел создан',
-                section: { id: result.insertId, chapter_id, title, content, media, order_index }
+                section: { id: result.insertId, chapter_id, title, content: safeContent, media, order_index }
             });
         } finally {
             connection.release();
         }
     } catch (error) {
         console.error('Ошибка создания раздела:', error);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
+// Изменение порядка разделов (админ)
+router.put('/reorder', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { orders } = req.body;
+        if (!Array.isArray(orders) || orders.length === 0) {
+            return res.status(400).json({ success: false, message: 'Передайте массив orders' });
+        }
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            for (const item of orders) {
+                await connection.query('UPDATE sections SET order_index = ? WHERE id = ?', [item.order_index, item.id]);
+            }
+            await connection.commit();
+            res.json({ success: true, message: 'Порядок разделов обновлён' });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('❌ Ошибка изменения порядка разделов:', error);
         res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 });
@@ -136,9 +220,10 @@ router.put('/:id', authenticateToken, isAdmin, upload.array('images', 10), async
             } else if (req.files && req.files.length > 0) {
                 media.images = req.files.map(file => `/uploads/${file.filename}`);
             }
+            const safeContent = sanitizeHtml(content || '');
             const [result] = await connection.query(
                 'UPDATE sections SET title = ?, content = ?, media = ?, order_index = ? WHERE id = ?',
-                [title, content, JSON.stringify(media), order_index, req.params.id]
+                [title, safeContent, JSON.stringify(media), order_index, req.params.id]
             );
             if (result.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: 'Раздел не найден' });
@@ -267,7 +352,8 @@ router.get('/export/word/:id', async (req, res) => {
                     if (media.video) videoHtml = `<p><strong>Видео:</strong> ${media.video}</p>`;
                 } catch (e) {}
             }
-            const wordHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${section.title}</title><style>body{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5}h1{font-size:18pt;color:#1E40AF}h2{font-size:16pt}h3{font-size:14pt}p{margin-bottom:6pt}</style></head><body><h1>${section.title}</h1>${videoHtml}${section.content||''}</body></html>`;
+            const safeContent = sanitizeHtml(section.content || '');
+            const wordHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${section.title}</title><style>body{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5}h1{font-size:18pt;color:#1E40AF}h2{font-size:16pt}h3{font-size:14pt}p{margin-bottom:6pt}</style></head><body><h1>${section.title}</h1>${videoHtml}${safeContent}</body></html>`;
             res.setHeader('Content-Type', 'application/msword');
             res.setHeader('Content-Disposition', `attachment; filename=section_${section.id}.doc`);
             res.send(wordHtml);
@@ -331,9 +417,10 @@ router.post('/import/excel/:chapterId', authenticateToken, isAdmin, uploadExcel.
                 const videoUrl = row.getCell(5).value;
                 if (title) {
                     const media = { video: videoUrl || null, images: [] };
+                    const safeContent = sanitizeHtml(content ? String(content) : '');
                     promises.push(connection.query(
                         'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
-                        [req.params.chapterId, String(title), content ? String(content) : '', JSON.stringify(media), parseInt(orderIndex) || 0]
+                        [req.params.chapterId, String(title), safeContent, JSON.stringify(media), parseInt(orderIndex) || 0]
                     ));
                     imported++;
                 }
@@ -398,7 +485,7 @@ router.post('/import/docx', authenticateToken, isAdmin, uploadWord.single('file'
         };
         
         const result = await mammoth.convertToHtml({ path: req.file.path }, options);
-        let html = result.value;
+        let html = sanitizeHtml(result.value);
         
         const wordStyles = `<style>.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0;color:#1a1a1a}.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0;color:#2d2d2d}.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0;color:#404040}.doc-content p{margin:0 0 6pt 0;text-align:justify}.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}.doc-content th{background-color:#f5f5f5;font-weight:bold}.doc-content ul,.doc-content ol{margin:6pt 0 6pt 20pt}.doc-content li{margin-bottom:3pt}.doc-content img{max-width:100%;height:auto;margin:8pt 0}.doc-content strong{font-weight:bold}.doc-content em{font-style:italic}.doc-content u{text-decoration:underline}.doc-content .indent{text-indent:1.25cm}</style>`;
         html = `<div class="doc-content">${wordStyles}${html}</div>`;
@@ -411,9 +498,10 @@ router.post('/import/docx', authenticateToken, isAdmin, uploadWord.single('file'
         const connection = await pool.getConnection();
         try {
             const media = { video: null, images: [] };
+            const safeHtml = sanitizeHtml(html);
             const [insertResult] = await connection.query(
                 'INSERT INTO sections (chapter_id, title, content, media, order_index) VALUES (?, ?, ?, ?, ?)',
-                [chapter_id, sectionTitle, html, JSON.stringify(media), order_index || 0]
+                [chapter_id, sectionTitle, safeHtml, JSON.stringify(media), order_index || 0]
             );
             
             console.log('✅ Раздел создан с полным форматированием, ID:', insertResult.insertId);
@@ -424,7 +512,7 @@ router.post('/import/docx', authenticateToken, isAdmin, uploadWord.single('file'
             res.json({
                 success: true,
                 message: 'Раздел импортирован из DOCX с полным форматированием',
-                section: { id: insertResult.insertId, chapter_id, title: sectionTitle, content: html, warnings: result.messages }
+                section: { id: insertResult.insertId, chapter_id, title: sectionTitle, content: safeHtml, warnings: result.messages }
             });
         } finally {
             connection.release();
@@ -483,7 +571,7 @@ router.post('/import/docx/batch', authenticateToken, isAdmin, uploadWord.array('
                     };
                     
         const result = await mammoth.convertToHtml({ buffer: fileBuffer }, options);
-                    const html = `<div class="doc-content"><style>.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0}.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0}.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0}.doc-content p{margin:0 0 6pt 0;text-align:justify}.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}.doc-content img{max-width:100%;height:auto;margin:8pt 0}</style>${result.value}</div>`;
+                    const html = sanitizeHtml(`<div class="doc-content"><style>.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0}.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0}.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0}.doc-content p{margin:0 0 6pt 0;text-align:justify}.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}.doc-content img{max-width:100%;height:auto;margin:8pt 0}</style>${result.value}</div>`);
                     
                     const sectionTitle = file.originalname.replace(/\.docx$/i, '');
                     const media = { video: null, images: [] };

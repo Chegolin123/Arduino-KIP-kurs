@@ -11,8 +11,10 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isAdmin = user?.role === 'admin';
+
   const isActive = (path) => location.pathname === path;
-  const isAdminSection = location.pathname.startsWith('/admin');
+  const isCatalog = location.pathname.startsWith('/catalog');
 
   const handleLogout = () => {
     dispatch(logout());
@@ -20,65 +22,36 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-            <span className="text-xl font-bold text-blue-800">КИП</span>
-            <span className="text-xl font-light text-gray-700">ФИН</span>
-            <span className="hidden sm:inline text-sm text-gray-400 ml-2">| знания для будущего</span>
-          </Link>
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+          <img src="/logo.png" alt="MicroMiR" className="w-8 h-8 rounded-lg shadow-sm" />
+          <span className="font-semibold text-[18px] text-primary">MicroMiR</span>
+        </Link>
 
-          <nav className="flex items-center space-x-1">
-            <Link 
-              to="/library" 
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isActive('/library') ? 'text-blue-800 bg-blue-50' : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-              }`}
-            >
-              Библиотека
-            </Link>
-            
-            <Link 
-              to="/catalog" 
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                location.pathname.startsWith('/catalog') ? 'text-blue-800 bg-blue-50' : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-              }`}
-            >
-              Каталог
-            </Link>
+        <nav className="hidden md:flex items-center gap-6">
+          <Link className={`text-sm font-medium transition-colors ${isActive('/library') ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`} to="/library">Библиотека</Link>
+          <Link className={`text-sm font-medium transition-colors ${isCatalog ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`} to="/catalog">Каталог</Link>
+          {isAdmin && <Link className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors" to="/admin">Админ</Link>}
+        </nav>
 
-            {isAuthenticated ? (
-              <>
-                {user?.role === 'admin' && (
-                  <Link to="/admin" className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isAdminSection ? 'text-blue-800 bg-blue-50' : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-                  }`}>
-                    Админ
-                  </Link>
-                )}
-                <Link to="/profile" className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isActive('/profile') ? 'text-blue-800 bg-blue-50' : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-                }`}>
-                  {user?.username || 'Профиль'}
-                </Link>
-                <button onClick={handleLogout} className="ml-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  Выйти
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isActive('/login') ? 'text-blue-800 bg-blue-50' : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-                }`}>
-                  Вход
-                </Link>
-                <Link to="/register" className="ml-2 px-4 py-2 text-sm font-medium text-white bg-blue-800 hover:bg-blue-900 rounded-lg transition-colors">
-                  Регистрация
-                </Link>
-              </>
-            )}
-          </nav>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {isAuthenticated ? (
+            <>
+              <Link to="/profile" className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-surface-container-low transition-colors text-sm text-primary font-semibold">
+                <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                <span className="hidden md:inline">{user?.username || 'Профиль'}</span>
+              </Link>
+              <button onClick={handleLogout} className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant" aria-label="Выйти">
+                <span className="material-symbols-outlined">logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors">Вход</Link>
+              <Link to="/register" className="px-4 py-2 rounded-full text-sm font-semibold bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm">Регистрация</Link>
+            </>
+          )}
         </div>
       </div>
     </header>

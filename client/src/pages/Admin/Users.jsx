@@ -97,27 +97,43 @@ const AdminUsers = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="bg-gray-50 flex-1">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="flex-1 min-h-screen" style={{
+      backgroundColor: '#f8fafc',
+      backgroundImage: `
+        linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+        radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+        url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+      `,
+      backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+      backgroundRepeat: 'repeat',
+      backgroundAttachment: 'fixed',
+    }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-8 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Админка</p>
+          <h1 className="text-3xl sm:text-4xl font-bold mt-2">Пользователи</h1>
+          <p className="text-sm sm:text-base text-blue-100/90 mt-3 max-w-2xl">Поиск пользователей, фильтрация по группам и просмотр статистики.</p>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">Всего</p>
-            <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+          <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs text-slate-500">Всего</p>
+            <p className="text-2xl font-bold text-slate-900">{users.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">Студентов</p>
+          <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs text-slate-500">Студентов</p>
             <p className="text-2xl font-bold text-green-600">{studentCount}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">Админов</p>
+          <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs text-slate-500">Админов</p>
             <p className="text-2xl font-bold text-blue-800">{adminCount}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">КИП ФИН</p>
+          <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs text-slate-500">КИП ФИН</p>
             <p className="text-2xl font-bold text-purple-600">{kipfinCount}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">Групп</p>
+          <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <p className="text-xs text-slate-500">Групп</p>
             <p className="text-2xl font-bold text-orange-600">{availableGroups.length}</p>
           </div>
         </div>
@@ -126,12 +142,12 @@ const AdminUsers = () => {
           {/* Левая колонка — фильтры и список */}
           <div className="lg:col-span-1 space-y-4">
             {/* Фильтр по группе */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 text-sm">Фильтр по группе</h3>
+            <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-4 shadow-sm">
+              <h3 className="font-semibold text-slate-900 mb-3 text-sm">Фильтр по группе</h3>
               <select
                 value={filterGroup}
                 onChange={(e) => setFilterGroup(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
               >
                 <option value="">Все группы</option>
                 {Object.entries(groupedGroups).map(([course, groups]) => (
@@ -150,23 +166,23 @@ const AdminUsers = () => {
             </div>
 
             {/* Список пользователей */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-4 shadow-sm">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Поиск..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl mb-3 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
               />
-              <p className="text-xs text-gray-500 mb-2">{filteredUsers.length} пользователей</p>
+              <p className="text-xs text-slate-500 mb-2">{filteredUsers.length} пользователей</p>
 
-              {loading ? <p className="text-sm text-gray-400">Загрузка...</p> :
-               filteredUsers.length === 0 ? <p className="text-sm text-gray-400">Ничего не найдено</p> : (
+              {loading ? <p className="text-sm text-slate-400">Загрузка...</p> :
+               filteredUsers.length === 0 ? <p className="text-sm text-slate-400">Ничего не найдено</p> : (
                 <div className="space-y-1 max-h-[400px] overflow-y-auto">
                   {filteredUsers.map((u) => (
                     <div key={u.id} onClick={() => loadUserStats(u.id)}
                       className={`p-2.5 rounded-lg cursor-pointer transition-colors ${
-                        selectedUser?.id === u.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                        selectedUser?.id === u.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'
                       }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 min-w-0">
@@ -175,7 +191,7 @@ const AdminUsers = () => {
                             {u.username.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{u.username}</p>
+                            <p className="text-sm font-medium text-slate-900 truncate">{u.username}</p>
                             {u.student_group && (
                               <p className="text-xs text-blue-600">{u.student_group}</p>
                             )}
@@ -196,7 +212,7 @@ const AdminUsers = () => {
           <div className="lg:col-span-3">
             {selectedUser ? (
               <div className="space-y-6">
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
@@ -204,14 +220,14 @@ const AdminUsers = () => {
                         {selectedUser.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">{selectedUser.username}</h2>
-                        <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                        <h2 className="text-xl font-bold text-slate-900">{selectedUser.username}</h2>
+                        <p className="text-sm text-slate-500">{selectedUser.email}</p>
                         {selectedUser.institution && (
                           <p className="text-sm text-blue-700 mt-0.5">
                             {selectedUser.institution}{selectedUser.student_group ? ` · ${selectedUser.student_group}` : ''}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 mt-1">Зарегистрирован: {formatDate(selectedUser.created_at)}</p>
+                        <p className="text-xs text-slate-400 mt-1">Зарегистрирован: {formatDate(selectedUser.created_at)}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -228,16 +244,16 @@ const AdminUsers = () => {
 
                 {userStats && (
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                      <p className="text-xs text-gray-500">Всего разделов</p>
-                      <p className="text-2xl font-bold text-gray-900">{userStats.stats.totalSections}</p>
+                    <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+                      <p className="text-xs text-slate-500">Всего разделов</p>
+                      <p className="text-2xl font-bold text-slate-900">{userStats.stats.totalSections}</p>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                      <p className="text-xs text-gray-500">Пройдено</p>
+                    <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+                      <p className="text-xs text-slate-500">Пройдено</p>
                       <p className="text-2xl font-bold text-green-600">{userStats.stats.completedSections}</p>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
-                      <p className="text-xs text-gray-500">Прогресс</p>
+                    <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 shadow-sm">
+                      <p className="text-xs text-slate-500">Прогресс</p>
                       <p className="text-2xl font-bold text-blue-800">
                         {userStats.stats.totalSections > 0 ? Math.round((userStats.stats.completedSections / userStats.stats.totalSections) * 100) : 0}%
                       </p>
@@ -245,25 +261,25 @@ const AdminUsers = () => {
                   </div>
                 )}
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Информация</h3>
+                <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-sm">
+                  <h3 className="font-semibold text-slate-900 mb-4">Информация</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">ID</span><span className="text-sm text-gray-900">{selectedUser.id}</span></div>
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">Имя</span><span className="text-sm text-gray-900">{selectedUser.username}</span></div>
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">Email</span><span className="text-sm text-gray-900">{selectedUser.email}</span></div>
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">Учебное заведение</span><span className="text-sm text-gray-900">{selectedUser.institution || '—'}</span></div>
+                    <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">ID</span><span className="text-sm text-slate-900">{selectedUser.id}</span></div>
+                    <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">Имя</span><span className="text-sm text-slate-900">{selectedUser.username}</span></div>
+                    <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">Email</span><span className="text-sm text-slate-900">{selectedUser.email}</span></div>
+                    <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">Учебное заведение</span><span className="text-sm text-slate-900">{selectedUser.institution || '—'}</span></div>
                     {selectedUser.student_group && (
-                      <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">Группа</span><span className="text-sm text-gray-900">{selectedUser.student_group}</span></div>
+                      <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">Группа</span><span className="text-sm text-slate-900">{selectedUser.student_group}</span></div>
                     )}
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-500">Роль</span><span className="text-sm text-gray-900">{selectedUser.role === 'admin' ? 'Администратор' : 'Студент'}</span></div>
-                    <div className="flex justify-between py-2"><span className="text-sm text-gray-500">Регистрация</span><span className="text-sm text-gray-900">{formatDate(selectedUser.created_at)}</span></div>
+                    <div className="flex justify-between py-2 border-b border-slate-100"><span className="text-sm text-slate-500">Роль</span><span className="text-sm text-slate-900">{selectedUser.role === 'admin' ? 'Администратор' : 'Студент'}</span></div>
+                    <div className="flex justify-between py-2"><span className="text-sm text-slate-500">Регистрация</span><span className="text-sm text-slate-900">{formatDate(selectedUser.created_at)}</span></div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <h3 className="font-semibold text-gray-400 mb-2">Выберите пользователя</h3>
-                <p className="text-gray-400 text-sm">Выберите пользователя слева для просмотра информации</p>
+              <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
+                <h3 className="font-semibold text-slate-400 mb-2">Выберите пользователя</h3>
+                <p className="text-slate-400 text-sm">Выберите пользователя слева для просмотра информации</p>
               </div>
             )}
           </div>

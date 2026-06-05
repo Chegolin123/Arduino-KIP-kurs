@@ -102,26 +102,42 @@ const Login = () => {
   const needVerification = error && typeof error === 'object' && error.needVerification;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Вход</h2>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4"
+      style={{
+        backgroundColor: '#f8fafc',
+        backgroundImage: `
+          linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+        `,
+        backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }}>
+      <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Доступ к платформе</p>
+          <h2 className="text-2xl font-bold text-slate-900 mt-2">Вход</h2>
+          <p className="text-sm text-slate-500 mt-1">Войдите, чтобы продолжить обучение и открыть библиотеку.</p>
+        </div>
 
         {/* Индикатор верификации */}
         {verifying && (
-          <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg mb-4 text-sm text-center">
+          <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl mb-4 text-sm text-center border border-blue-100">
             ⏳ Подтверждение email...
           </div>
         )}
 
         {/* Сообщение о подтверждении */}
         {verifyStatus === 'success' && (
-          <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
+          <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-xl mb-4 text-sm border border-emerald-100">
             ✅ {verifyMessage}
           </div>
         )}
 
         {verifyStatus === 'error' && (
-          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">
+          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl mb-4 text-sm border border-red-100">
             ❌ {verifyMessage}
           </div>
         )}
@@ -133,7 +149,7 @@ const Login = () => {
 
         {/* Нужно подтвердить email */}
         {needVerification && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
             <p className="text-sm text-yellow-800 mb-2">📧 Email не подтверждён. Проверьте почту.</p>
             {!resendSent ? (
               <div className="flex gap-2">
@@ -142,11 +158,11 @@ const Login = () => {
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
                   placeholder="Введите email"
-                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded"
+                  className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 />
                 <button
                   onClick={handleResendVerification}
-                  className="px-3 py-1.5 text-sm bg-blue-800 text-white rounded hover:bg-blue-900"
+                  className="px-3 py-2 text-sm bg-blue-900 text-white rounded-xl hover:bg-blue-950"
                 >
                   Отправить повторно
                 </button>
@@ -159,24 +175,24 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="example@email.com"
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Пароль</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Введите пароль"
             />
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
@@ -185,7 +201,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-800 text-white font-medium rounded-lg hover:bg-blue-900 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-blue-900 text-white font-medium rounded-xl hover:bg-blue-950 transition-colors disabled:opacity-50 shadow-sm"
           >
             {loading ? 'Вход...' : 'Войти'}
           </button>
@@ -193,7 +209,7 @@ const Login = () => {
 
         <p className="text-sm text-gray-500 text-center mt-6">
           Нет аккаунта?{' '}
-          <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">Зарегистрироваться</Link>
+          <Link to="/register" className="text-blue-700 hover:text-blue-900 font-medium">Зарегистрироваться</Link>
         </p>
       </div>
     </div>

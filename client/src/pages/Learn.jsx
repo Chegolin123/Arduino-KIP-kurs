@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Sidebar from '../components/Layout/Sidebar';
 import TestPlayer from '../components/TestPlayer';
 import { fetchSection } from '../store/chaptersSlice';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 const Learn = () => {
   const { chapterId, sectionId } = useParams();
@@ -14,7 +15,7 @@ const Learn = () => {
   const courseId = searchParams.get('course_id');
   
   const dispatch = useDispatch();
-  const { currentSection, loading } = useSelector((state) => state.chapters);
+  const { currentSection, loading, chapters } = useSelector((state) => state.chapters);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [testCompleted, setTestCompleted] = useState(false);
   const [showChapterTest, setShowChapterTest] = useState(false);
@@ -31,6 +32,12 @@ const Learn = () => {
     setShowChapterTest(false);
   }, [chapterId]);
 
+  useEffect(() => {
+    if (showChapterTest) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showChapterTest]);
+
   const getVideoEmbedUrl = (url) => {
     if (!url) return null;
     const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
@@ -44,6 +51,10 @@ const Learn = () => {
   const media = currentSection?.media || {};
   const videoUrl = media?.video ? getVideoEmbedUrl(media.video) : null;
   const images = media?.images || [];
+  const currentChapter = chapters.find((chapter) => chapter.id === Number(chapterId));
+  const orderedSections = [...(currentChapter?.sections || [])].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+  const lastSectionId = orderedSections.length > 0 ? Number(orderedSections[orderedSections.length - 1].id) : null;
+  const isLastSection = Boolean(sectionId) && Number(sectionId) === lastSectionId;
 
   const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
@@ -53,46 +64,63 @@ const Learn = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div
+      className="flex min-h-screen"
+      style={{
+        backgroundColor: '#f8fafc',
+        backgroundImage: `
+          linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+        `,
+        backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       <Sidebar courseId={courseId} />
       
       <div className="flex-1">
         {!sectionId && !chapterId ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 py-20">
+          <div className="flex items-center justify-center h-full p-6">
+            <div className="text-center text-slate-500 py-20 bg-white/85 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm px-8">
               <svg className="w-20 h-20 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
               <h2 className="text-xl font-semibold mb-2">Выберите раздел</h2>
-              <p className="text-gray-400">Выберите раздел в боковом меню для начала обучения</p>
+              <p className="text-slate-400">Выберите раздел в боковом меню для начала обучения</p>
             </div>
           </div>
         ) : loading ? (
           <div className="p-8 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
-            <div className="aspect-video bg-gray-200 rounded-lg mb-6"></div>
+            <div className="h-6 bg-slate-200 rounded w-1/3 mb-6"></div>
+            <div className="aspect-video bg-white rounded-3xl border border-slate-200 mb-6"></div>
             <div className="space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-4 bg-slate-200 rounded w-full"></div>
+              <div className="h-4 bg-slate-200 rounded w-5/6"></div>
             </div>
           </div>
-        ) : currentSection ? (
-          <div className="max-w-4xl mx-auto p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">{currentSection.title}</h1>
+        ) : currentSection && !showChapterTest ? (
+          <div className="max-w-4xl mx-auto p-6 sm:p-8">
+            <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Обучение</p>
+              <h1 className="text-2xl sm:text-3xl font-bold mt-2">{currentSection.title}</h1>
+            </div>
 
             {(videoUrl || images.length > 0) && (
-              <div className="bg-gray-100 rounded-xl overflow-hidden mb-8">
+              <div className="bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl overflow-hidden mb-8 shadow-sm">
                 {videoUrl ? (
                   <div className="aspect-video">
                     <iframe src={videoUrl} className="w-full h-full" allowFullScreen title="Видео" frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
                   </div>
                 ) : (
-                  <div className="relative">
-                    <div className="aspect-video bg-black flex items-center justify-center">
-                      <img src={`http://localhost:5000${images[currentImageIndex]}`} alt=""
-                        className="max-w-full max-h-full object-contain" />
-                    </div>
+                    <div className="relative">
+                      <div className="aspect-video bg-slate-950 flex items-center justify-center">
+                        <img src={`http://localhost:5000${images[currentImageIndex]}`} alt=""
+                          className="max-w-full max-h-full object-contain" />
+                      </div>
                     {images.length > 1 && (
                       <>
                         <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-lg">
@@ -114,32 +142,35 @@ const Learn = () => {
               </div>
             )}
 
-            <div className="prose max-w-none text-gray-700 leading-relaxed mb-8"
-              dangerouslySetInnerHTML={{ __html: currentSection.content }} />
+            <div className="prose max-w-none text-slate-700 leading-relaxed mb-8 bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSection.content || '') }} />
 
             {/* Кнопка для перехода к тесту главы */}
-            {chapterId && !showChapterTest && (
-              <div className="border-t border-gray-200 pt-6 mt-8 text-center">
-                <p className="text-gray-500 text-sm mb-4">
+            {chapterId && isLastSection && !showChapterTest && (
+              <div className="border-t border-slate-200 pt-6 mt-8 text-center bg-white/88 backdrop-blur-sm rounded-3xl px-6 py-8 shadow-sm border">
+                <p className="text-slate-500 text-sm mb-4">
                   Вы прошли все разделы главы. Проверьте свои знания!
                 </p>
                 <button
                   onClick={() => setShowChapterTest(true)}
-                  className="px-6 py-3 bg-blue-800 text-white font-medium rounded-lg hover:bg-blue-900 transition-colors"
+                  className="px-6 py-3 bg-blue-900 text-white font-medium rounded-full hover:bg-blue-950 transition-colors shadow-sm"
                 >
                   Пройти тест по главе
                 </button>
               </div>
             )}
           </div>
-        ) : chapterId && !sectionId ? (
+        ) : chapterId && (!sectionId || showChapterTest) ? (
           /* Тест в конце главы */
-          <div className="max-w-4xl mx-auto p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Тест по главе</h1>
-            <p className="text-gray-500 mb-6">Проверьте свои знания по материалу главы</p>
+          <div className="max-w-4xl mx-auto p-6 sm:p-8">
+            <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Тест</p>
+              <h1 className="text-2xl sm:text-3xl font-bold mt-2">Тест по главе</h1>
+              <p className="text-blue-100/90 mt-3">Проверьте свои знания по материалу главы</p>
+            </div>
             
             {testCompleted && (
-              <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
+              <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center space-x-3 shadow-sm">
                 <span className="text-2xl">✅</span>
                 <div>
                   <p className="font-medium text-green-800">Глава пройдена!</p>
@@ -148,10 +179,10 @@ const Learn = () => {
               </div>
             )}
             
-            <TestPlayer sectionId={null} chapterId={chapterId} onComplete={handleTestComplete} />
+            <TestPlayer chapterId={chapterId} onComplete={handleTestComplete} />
           </div>
         ) : (
-          <div className="text-center text-gray-500 py-20">
+          <div className="text-center text-slate-500 py-20 bg-white/85 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm m-6">
             <p className="text-xl">Раздел не найден</p>
           </div>
         )}

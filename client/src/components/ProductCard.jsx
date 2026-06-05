@@ -14,14 +14,18 @@ const ProductCard = ({ product }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all">
       {/* Изображение */}
-      <div className="h-48 bg-gray-100 rounded-t-xl overflow-hidden flex items-center justify-center relative">
+      <div className="aspect-square bg-gray-100 rounded-t-xl overflow-hidden flex items-center justify-center relative">
         {imageUrl && !imageError ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
+          <>
+            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm scale-105"
+                 style={{backgroundImage: `url(${imageUrl})`}} />
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="relative z-10 w-full h-full object-contain"
+              onError={() => setImageError(true)}
+            />
+          </>
         ) : (
           <div className="text-center p-4">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">

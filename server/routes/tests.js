@@ -5,28 +5,44 @@ const router = express.Router();
 const { pool } = require('../config/database');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
-// Получение теста для раздела
-router.get('/section/:sectionId', async (req, res) => {
-    try {
-        const connection = await pool.getConnection();
-        const [tests] = await connection.query('SELECT * FROM tests WHERE section_id = ?', [req.params.sectionId]);
-        connection.release();
-
-        if (tests.length === 0) return res.json({ success: true, test: null });
-        
-        const test = await getFullTest(tests[0].id);
-        res.json({ success: true, test });
-    } catch (error) {
-        console.error('Ошибка получения теста:', error);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+function validateQuestions(questions) {
+    if (!Array.isArray(questions) || questions.length === 0) {
+        return 'Добавьте хотя бы один вопрос';
     }
-});
+
+    for (const question of questions) {
+        if (!question.question || !String(question.question).trim()) {
+            return 'У каждого вопроса должен быть текст';
+        }
+
+        if (!Array.isArray(question.answers) || question.answers.length < 2) {
+            return 'У каждого вопроса должно быть минимум 2 варианта ответа';
+        }
+
+        const normalizedType = question.type === 'multiple' ? 'multiple' : 'single';
+        const correctAnswers = question.answers.filter((answer) => answer.is_correct && String(answer.answer || '').trim());
+
+        if (correctAnswers.length === 0) {
+            return 'У каждого вопроса должен быть хотя бы один правильный ответ';
+        }
+
+        if (normalizedType === 'single' && correctAnswers.length !== 1) {
+            return 'Для вопроса с одним правильным ответом должна быть выбрана ровно одна правильная опция';
+        }
+
+        if (question.answers.some((answer) => !String(answer.answer || '').trim())) {
+            return 'Все варианты ответа должны быть заполнены';
+        }
+    }
+
+    return null;
+}
 
 // Получение теста для главы
 router.get('/chapter/:chapterId', async (req, res) => {
     try {
         const connection = await pool.getConnection();
-        const [tests] = await connection.query('SELECT * FROM tests WHERE chapter_id = ?', [req.params.chapterId]);
+        const [tests] = await connection.query('SELECT * FROM tests WHERE chapter_id = ? LIMIT 1', [req.params.chapterId]);
         connection.release();
 
         if (tests.length === 0) return res.json({ success: true, test: null });
@@ -91,6 +107,10 @@ router.post('/check', authenticateToken, async (req, res) => {
             let correctCount = 0;
             const totalQuestions = questions.length;
 
+            if (totalQuestions === 0) {
+                return res.status(400).json({ success: false, message: 'В тесте нет вопросов' });
+            }
+
             for (let question of questions) {
                 const [correctAnswers] = await connection.query(
                     'SELECT id FROM answers WHERE question_id = ? AND is_correct = TRUE',
@@ -101,7 +121,7 @@ router.post('/check', authenticateToken, async (req, res) => {
                 const userAnswer = userAnswers[question.id];
 
                 if (userAnswer) {
-                    const userAnswerIds = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+                    const userAnswerIds = [...new Set((Array.isArray(userAnswer) ? userAnswer : [userAnswer]).map(Number).filter(Boolean))];
                     const isCorrect = correctIds.length === userAnswerIds.length &&
                         correctIds.every(id => userAnswerIds.includes(id));
                     if (isCorrect) correctCount++;
@@ -138,11 +158,11 @@ router.post('/check', authenticateToken, async (req, res) => {
     }
 });
 
-// Получение результатов пользователя по разделу
-router.get('/results/:sectionId', authenticateToken, async (req, res) => {
+// Получение результатов пользователя по главе
+router.get('/results/chapter/:chapterId', authenticateToken, async (req, res) => {
     try {
         const connection = await pool.getConnection();
-        const [tests] = await connection.query('SELECT id FROM tests WHERE section_id = ?', [req.params.sectionId]);
+        const [tests] = await connection.query('SELECT id FROM tests WHERE chapter_id = ?', [req.params.chapterId]);
         
         if (tests.length === 0) {
             connection.release();
@@ -168,7 +188,7 @@ router.get('/results/all', authenticateToken, async (req, res) => {
         const connection = await pool.getConnection();
         
         const [results] = await connection.query(
-            'SELECT tr.*, t.title as test_title, t.section_id, t.chapter_id FROM test_results tr ' +
+            'SELECT tr.*, t.title as test_title, t.chapter_id FROM test_results tr ' +
             'LEFT JOIN tests t ON tr.test_id = t.id ' +
             'WHERE tr.user_id = ? ORDER BY tr.completed_at DESC',
             [req.user.id]
@@ -185,38 +205,41 @@ router.get('/results/all', authenticateToken, async (req, res) => {
 // Создание/обновление теста
 router.post('/manage', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const { section_id, chapter_id, title, description, pass_percent, questions } = req.body;
+        const { chapter_id, title, description, pass_percent, questions } = req.body;
         const connection = await pool.getConnection();
         
         try {
-            let query = 'SELECT id FROM tests WHERE ';
-            let params = [];
-            
-            if (section_id) {
-                query += 'section_id = ?';
-                params = [section_id];
-            } else if (chapter_id) {
-                query += 'chapter_id = ?';
-                params = [chapter_id];
-            } else {
-                return res.status(400).json({ success: false, message: 'Укажите section_id или chapter_id' });
+            if (!chapter_id) {
+                return res.status(400).json({ success: false, message: 'Укажите chapter_id' });
             }
+
+            if (!title || !String(title).trim()) {
+                return res.status(400).json({ success: false, message: 'Укажите название теста' });
+            }
+
+            const normalizedPassPercent = Math.min(100, Math.max(0, parseInt(pass_percent, 10) || 70));
+            const questionError = validateQuestions(questions);
+            if (questionError) {
+                return res.status(400).json({ success: false, message: questionError });
+            }
+
+            await connection.beginTransaction();
             
-            const [existing] = await connection.query(query, params);
+            const [existing] = await connection.query('SELECT id FROM tests WHERE chapter_id = ?', [chapter_id]);
             
             let testId;
             
             if (existing.length > 0) {
                 testId = existing[0].id;
                 await connection.query(
-                    'UPDATE tests SET title = ?, description = ?, pass_percent = ?, section_id = ?, chapter_id = ? WHERE id = ?',
-                    [title, description, pass_percent, section_id || null, chapter_id || null, testId]
+                    'UPDATE tests SET title = ?, description = ?, pass_percent = ?, chapter_id = ? WHERE id = ?',
+                    [String(title).trim(), description || '', normalizedPassPercent, chapter_id, testId]
                 );
                 await connection.query('DELETE FROM questions WHERE test_id = ?', [testId]);
             } else {
                 const [result] = await connection.query(
-                    'INSERT INTO tests (section_id, chapter_id, title, description, pass_percent) VALUES (?, ?, ?, ?, ?)',
-                    [section_id || null, chapter_id || null, title, description, pass_percent || 70]
+                    'INSERT INTO tests (chapter_id, title, description, pass_percent) VALUES (?, ?, ?, ?)',
+                    [chapter_id, String(title).trim(), description || '', normalizedPassPercent]
                 );
                 testId = result.insertId;
             }
@@ -226,7 +249,7 @@ router.post('/manage', authenticateToken, isAdmin, async (req, res) => {
                     const q = questions[i];
                     const [qResult] = await connection.query(
                         'INSERT INTO questions (test_id, question, type, order_index) VALUES (?, ?, ?, ?)',
-                        [testId, q.question, q.type || 'single', i]
+                        [testId, String(q.question).trim(), q.type === 'multiple' ? 'multiple' : 'single', i]
                     );
 
                     if (q.answers && Array.isArray(q.answers)) {
@@ -241,25 +264,18 @@ router.post('/manage', authenticateToken, isAdmin, async (req, res) => {
                 }
             }
 
+            await connection.commit();
+
             res.json({ success: true, message: 'Тест сохранён', test_id: testId });
 
+        } catch (error) {
+            await connection.rollback();
+            throw error;
         } finally {
             connection.release();
         }
     } catch (error) {
         console.error('Ошибка сохранения теста:', error);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
-    }
-});
-
-// Удаление теста по section_id
-router.delete('/manage/section/:sectionId', authenticateToken, isAdmin, async (req, res) => {
-    try {
-        const connection = await pool.getConnection();
-        await connection.query('DELETE FROM tests WHERE section_id = ?', [req.params.sectionId]);
-        connection.release();
-        res.json({ success: true, message: 'Тест удалён' });
-    } catch (error) {
         res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 });
@@ -282,7 +298,7 @@ router.get('/results/admin/all', authenticateToken, isAdmin, async (req, res) =>
         const connection = await pool.getConnection();
         
         const [results] = await connection.query(
-            'SELECT tr.*, t.title as test_title, t.section_id, t.chapter_id, u.username, u.email, u.student_group ' +
+            'SELECT tr.*, t.title as test_title, t.chapter_id, u.username, u.email, u.student_group ' +
             'FROM test_results tr ' +
             'LEFT JOIN tests t ON tr.test_id = t.id ' +
             'LEFT JOIN users u ON tr.user_id = u.id ' +

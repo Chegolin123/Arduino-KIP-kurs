@@ -39,18 +39,19 @@ const CatalogSidebar = () => {
   };
 
   return (
-    <aside className="w-72 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-        Категории
-      </h3>
+    <aside className="w-72 bg-white/82 backdrop-blur-sm border-r border-slate-200 p-6 overflow-y-auto shadow-sm">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Категории</h3>
+        <p className="text-xs text-slate-400 mt-1">Фильтр по типу компонентов</p>
+      </div>
       
       <nav className="space-y-1">
         <Link
           to="/catalog"
-          className={`block text-sm py-2 px-3 rounded-lg transition-colors ${
+          className={`block text-sm py-2.5 px-3 rounded-xl transition-colors ${
             !currentCategory
-              ? 'text-blue-600 bg-blue-50 font-medium'
-              : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'
+              ? 'text-blue-700 bg-blue-50 border border-blue-100 font-medium'
+              : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
           }`}
         >
           Все категории
@@ -60,21 +61,21 @@ const CatalogSidebar = () => {
           <Link
             key={cat.name}
             to={`/catalog?category=${cat.name}`}
-            className={`block text-sm py-2 px-3 rounded-lg transition-colors ${
+            className={`block text-sm py-2.5 px-3 rounded-xl transition-colors ${
               currentCategory === cat.name
-                ? 'text-blue-600 bg-blue-50 font-medium'
-                : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'
+                ? 'text-blue-700 bg-blue-50 border border-blue-100 font-medium'
+                : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
             }`}
           >
             <div className="flex justify-between items-center">
               <span>{cat.name}</span>
-              <span className="text-xs text-gray-400">{cat.count}</span>
+              <span className="text-xs text-slate-400">{cat.count}</span>
             </div>
           </Link>
         ))}
         
         {categories.length === 0 && (
-          <p className="text-sm text-gray-400 px-3 py-2">Нет категорий</p>
+          <p className="text-sm text-slate-400 px-3 py-2">Нет категорий</p>
         )}
       </nav>
     </aside>

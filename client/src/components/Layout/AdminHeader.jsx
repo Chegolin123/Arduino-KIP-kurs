@@ -32,44 +32,38 @@ const AdminHeader = () => {
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-6">
-            <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-              <span className="text-xl font-bold text-blue-800">КИП</span>
-              <span className="text-xl font-light text-gray-700">ФИН</span>
-            </Link>
-            
-            <nav className="flex items-center space-x-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    isActive(link.path)
-                      ? 'text-blue-800 bg-blue-50'
-                      : 'text-gray-600 hover:text-blue-800 hover:bg-blue-50'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+          <img src="/logo.png" alt="MicroMiR" className="w-8 h-8 rounded-lg shadow-sm" />
+          <span className="font-semibold text-[18px] text-primary">MicroMiR</span>
+        </Link>
 
-          <div className="flex items-center space-x-3">
-            <Link to="/" className="text-sm text-gray-500 hover:text-blue-800 transition-colors">
-              ← На сайт
-            </Link>
-            <span className="text-sm text-gray-400">{user?.username}</span>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        <nav className="hidden md:flex items-center gap-6">
+          <Link to="/" className="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">← На сайт</Link>
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`text-sm font-medium transition-colors ${
+                isActive(link.path)
+                  ? 'text-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
             >
-              Выйти
-            </button>
-          </div>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm text-primary font-semibold">
+            <span className="material-symbols-outlined text-[20px]">account_circle</span>
+            <span className="hidden md:inline">{user?.username}</span>
+          </span>
+          <button onClick={handleLogout} className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant" aria-label="Выйти">
+            <span className="material-symbols-outlined">logout</span>
+          </button>
         </div>
       </div>
     </header>

@@ -26,6 +26,7 @@ const AdminChapters = () => {
   
   const [chapterForm, setChapterForm] = useState({ title: '', description: '', sectionsCount: 0, course_id: '' });
   const [sectionForm, setSectionForm] = useState({ title: '', content: '', order_index: 0, video_url: '', images: null });
+  const [draftStatus, setDraftStatus] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') { navigate('/login'); }
@@ -118,7 +119,11 @@ const AdminChapters = () => {
         for (let i = 0; i < sectionForm.images.length; i++) formData.append('images', sectionForm.images[i]);
       }
       await (editingSection ? API.put(`/sections/${editingSection.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }) : API.post('/sections', formData, { headers: { 'Content-Type': 'multipart/form-data' } }));
+      if (editingSection) {
+        await API.delete(`/sections/${editingSection.id}/draft`);
+      }
       resetSectionForm();
+      setDraftStatus('');
       await Promise.all([loadData(), loadSelectedChapter()]);
     } catch (error) { alert('Ошибка сохранения раздела'); }
   };
@@ -133,11 +138,50 @@ const AdminChapters = () => {
       setEditingSection(section);
       setSectionForm({ title: section.title || '', content: section.content || '', order_index: section.order_index || 0, video_url: section.media?.video || '', images: null });
     }
+    try {
+      const draftRes = await API.get(`/sections/${section.id}/draft`);
+      if (draftRes.data.draft) {
+        setSectionForm((prev) => ({ ...prev, content: draftRes.data.draft }));
+      }
+    } catch (error) {
+      console.warn('Не удалось загрузить черновик:', error);
+    }
     setShowSectionForm(true);
   };
 
   const handleDeleteSection = async (id) => { if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); await Promise.all([loadData(), loadSelectedChapter()]); } };
   const handleDeleteImage = async (sectionId, imageIndex) => { await API.delete(`/sections/${sectionId}/images/${imageIndex}`); const res = await API.get(`/sections/${sectionId}`); setEditingSection(res.data.section); await Promise.all([loadData(), loadSelectedChapter()]); };
+
+  const handleSectionAutoSave = async (content) => {
+    if (!editingSection) return;
+    try {
+      await API.put(`/sections/${editingSection.id}/draft`, { content });
+      setDraftStatus((prev) => (prev === 'error' ? 'saved' : 'saved'));
+      window.clearTimeout(window.__chapterDraftTimer);
+      window.__chapterDraftTimer = window.setTimeout(() => setDraftStatus(''), 1200);
+    } catch (error) {
+      console.warn('Ошибка автосохранения черновика:', error);
+      setDraftStatus('error');
+    }
+  };
+
+  const handleMoveUp = (index) => moveSection(index, -1);
+  const handleMoveDown = (index) => moveSection(index, 1);
+
+  const moveSection = async (index, direction) => {
+    const sorted = [...(selectedChapter?.sections || [])].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+    const reordered = [...sorted];
+    [reordered[index], reordered[targetIdx]] = [reordered[targetIdx], reordered[index]];
+    const orders = reordered.map((s, i) => ({ id: s.id, order_index: i + 1 }));
+    try {
+      await API.put('/sections/reorder', { orders });
+      await Promise.all([loadData(), loadSelectedChapter()]);
+    } catch (error) {
+      alert('Ошибка изменения порядка');
+    }
+  };
 
   // Экспорт/Импорт
   const downloadBlob = (data, filename) => { const url = window.URL.createObjectURL(new Blob([data])); const link = document.createElement('a'); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); window.URL.revokeObjectURL(url); };
@@ -190,27 +234,44 @@ const AdminChapters = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="bg-gray-50 flex-1">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <label className="block text-xs font-medium text-gray-600 mb-2">Курс</label>
-              <select value={selectedCourseId} onChange={(e) => handleCourseChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+    <div className="flex-1 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Админ-панель</p>
+              <h1 className="text-2xl sm:text-3xl font-bold mt-1">Главы и разделы</h1>
+              <p className="text-sm text-blue-100/90 mt-2 max-w-2xl">Управляйте структурой курсов, собирайте главы, редактируйте материалы и держите контент в порядке.</p>
+            </div>
+            <div className="flex gap-2 text-xs">
+              <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15">{courses.length} курсов</span>
+              <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15">{chapters.length} глав</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-4 self-start lg:pr-1">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Курс</label>
+              <select value={selectedCourseId} onChange={(e) => handleCourseChange(e.target.value)} className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                 {courses.length === 0 && <option value="">Нет курсов</option>}
                 {courses.map(course => <option key={course.id} value={course.id}>{course.title}</option>)}
               </select>
             </div>
-            <ChapterForm form={chapterForm} onChange={setChapterForm} onSubmit={handleSaveChapter} onCancel={resetChapterForm} isEditing={!!editingChapter} courses={courses} selectedCourseId={selectedCourseId} />
+            <ChapterForm form={chapterForm} onChange={setChapterForm} onSubmit={handleSaveChapter} onCancel={resetChapterForm} isEditing={!!editingChapter} />
             <ChapterList chapters={filteredChapters} selectedId={selectedChapter?.id} loading={loading} onSelect={setSelectedChapter} onEdit={handleEditChapter} onDelete={handleDeleteChapter} />
           </div>
           <div className="lg:col-span-2">
             {selectedChapter ? (
               <>
-                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <div><h2 className="font-semibold text-gray-900">{selectedChapter.title}</h2><p className="text-sm text-gray-500 mt-1">{selectedChapter.sections?.length || 0} разделов</p></div>
-                    <div className="flex items-center gap-2">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">{selectedChapter.title}</h2>
+                      <p className="text-sm text-slate-500 mt-1">{selectedChapter.sections?.length || 0} разделов · порядок и содержание можно менять прямо здесь</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
                       <ExportImportBar 
                         onExportExcel={handleExportExcel} 
                         onExportJson={handleExportJson} 
@@ -218,15 +279,22 @@ const AdminChapters = () => {
                         onImportDocx={handleImportDocx} 
                         onImportDocxBatch={handleImportDocxBatch} 
                       />
-                      <button onClick={() => { resetSectionForm(); setShowSectionForm(true); }} className="px-4 py-2 bg-blue-800 text-white text-sm font-medium rounded-lg hover:bg-blue-900 transition-colors">+ Раздел</button>
+                      <button onClick={() => { resetSectionForm(); setShowSectionForm(true); }} className="px-4 py-2.5 bg-blue-800 text-white text-sm font-medium rounded-xl hover:bg-blue-900 transition-colors shadow-sm">+ Раздел</button>
                     </div>
                   </div>
-                  {showSectionForm && <SectionForm form={sectionForm} onChange={setSectionForm} onSubmit={handleSaveSection} onCancel={resetSectionForm} isEditing={!!editingSection} existingMedia={editingSection?.media} onDeleteImage={(idx) => handleDeleteImage(editingSection.id, idx)} />}
+                  {draftStatus && (
+                    <div className={`mb-3 text-xs px-3 py-2 rounded-xl border ${draftStatus === 'error' ? 'bg-red-50 text-red-700 border-red-100' : draftStatus === 'saved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
+                      {draftStatus === 'saving' && 'Сохранение черновика...'}
+                      {draftStatus === 'saved' && 'Черновик сохранён'}
+                      {draftStatus === 'error' && 'Не удалось сохранить черновик'}
+                    </div>
+                  )}
+                  {showSectionForm && <SectionForm form={sectionForm} onChange={setSectionForm} onSubmit={handleSaveSection} onCancel={resetSectionForm} isEditing={!!editingSection} existingMedia={editingSection?.media} onDeleteImage={(idx) => handleDeleteImage(editingSection.id, idx)} onAutoSave={handleSectionAutoSave} />}
                 </div>
-                <SectionList sections={selectedChapter.sections} onExportWord={handleExportWord} onEdit={handleEditSection} onDelete={handleDeleteSection} />
+                <SectionList sections={selectedChapter.sections} onExportWord={handleExportWord} onEdit={handleEditSection} onDelete={handleDeleteSection} onMoveUp={handleMoveUp} onMoveDown={handleMoveDown} />
               </>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center mt-8">
                 <h3 className="font-semibold text-gray-400 mb-2">{courses.length === 0 ? 'Нет курсов' : 'Выберите главу'}</h3>
                 <p className="text-gray-400 text-sm">{courses.length === 0 ? 'Создайте курс в разделе "Курсы"' : 'Выберите главу слева'}</p>
               </div>

@@ -104,14 +104,26 @@ const Register = () => {
   // Экран успешной регистрации
   if (successEmail) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 p-8 text-center">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4"
+      style={{
+        backgroundColor: '#f8fafc',
+        backgroundImage: `
+          linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+        `,
+        backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }}>
+      <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 p-8 text-center">
           <div className="text-5xl mb-4">📧</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Проверьте почту</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Проверьте почту</h2>
+            <p className="text-slate-600 mb-6">
             Мы отправили письмо со ссылкой для подтверждения на <strong>{successEmail}</strong>.
           </p>
-          <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
             Перейдите по ссылке в письме, чтобы завершить регистрацию.
           </p>
           <div className="space-y-3">
@@ -125,9 +137,25 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl border border-gray-200 p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Регистрация</h2>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4"
+      style={{
+        backgroundColor: '#f8fafc',
+        backgroundImage: `
+          linear-gradient(rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(191, 219, 254, 0.4) 1px, transparent 1px),
+          radial-gradient(circle at 0px 0px, rgba(147, 197, 253, 0.8) 2px, transparent 0),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDE2MCAxNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmZkYmZlIiBzdHJva2Utd2lkdGg9IjEiPjxwYXRoIGQ9Ik00MCAwIHY0MCBoNDAgdjQwIGg0MCB2NDAgSDQwIi8+PHBhdGggZD0iTTEyMCAwIHY4MCBoLTQwIi8+PHBhdGggZD0iTTAgMTIwaDQwIHY0MCIvPjwvZz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzIiBmaWxsPSIjOTNjNWZkIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjxjaXJjbGUgY3g9IjEyMCIgY3k9IjEyMCIgcj0iMyIgZmlsbD0iIzkzYzVmZCIgZmlsbC1vcGFjaXR5PSIwLjUiLz48L3N2Zz4")
+        `,
+        backgroundSize: '80px 80px, 80px 80px, 80px 80px, 160px 160px',
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }}>
+      <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Создание аккаунта</p>
+          <h2 className="text-2xl font-bold text-slate-900 mt-2">Регистрация</h2>
+          <p className="text-sm text-slate-500 mt-1">Заполните данные, чтобы получить доступ к материалам и тестам.</p>
+        </div>
         
         {errors.general && (
           <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">{errors.general}</div>
@@ -136,12 +164,12 @@ const Register = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Имя */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Имя</label>
             <input
               type="text"
               value={formData.username}
               onChange={(e) => setFormData({...formData, username: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="username"
             />
             {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
@@ -149,12 +177,12 @@ const Register = () => {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="example@email.com"
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
@@ -162,11 +190,11 @@ const Register = () => {
 
           {/* Учебное заведение */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Учебное заведение</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Учебное заведение</label>
             <select
               value={formData.institution}
               onChange={(e) => handleInstitutionChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
             >
               <option value="">Без учебного заведения</option>
               <option value="kipfin">КИП ФИН</option>
@@ -176,7 +204,7 @@ const Register = () => {
           {/* Группа (только для КИП ФИН) */}
           {formData.institution === 'kipfin' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Группа *</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Группа *</label>
               
               {/* Поиск и выбранная группа */}
               <div className="relative">
@@ -192,17 +220,17 @@ const Register = () => {
                   }}
                   onFocus={() => setShowGroupDropdown(true)}
                   placeholder="Начните вводить группу..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                 />
                 
                 {/* Выпадающий список */}
                 {showGroupDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
                     {Object.entries(filteredGrouped).map(([course, groups]) => {
                       if (groups.length === 0) return null;
                       return (
                         <div key={course}>
-                          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 sticky top-0">
+                          <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 bg-slate-50 sticky top-0">
                             {course}
                           </div>
                           {groups.map(group => (
@@ -210,9 +238,9 @@ const Register = () => {
                               key={group}
                               type="button"
                               onClick={() => selectGroup(group)}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${
-                                formData.student_group === group ? 'bg-blue-50 text-blue-800 font-medium' : 'text-gray-700'
-                              }`}
+                                className={`w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
+                                 formData.student_group === group ? 'bg-blue-50 text-blue-800 font-medium' : 'text-slate-700'
+                               }`}
                             >
                               {group}
                             </button>
@@ -221,7 +249,7 @@ const Register = () => {
                       );
                     })}
                     {filteredGroups.length === 0 && (
-                      <p className="px-3 py-2 text-sm text-gray-400">Ничего не найдено</p>
+                      <p className="px-3 py-2 text-sm text-slate-400">Ничего не найдено</p>
                     )}
                   </div>
                 )}
@@ -238,12 +266,12 @@ const Register = () => {
 
           {/* Пароль */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Пароль</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Минимум 6 символов"
             />
             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
@@ -251,12 +279,12 @@ const Register = () => {
 
           {/* Подтверждение пароля */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Подтверждение пароля</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Подтверждение пароля</label>
             <input
               type="password"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
               placeholder="Повторите пароль"
             />
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
@@ -266,7 +294,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-800 text-white font-medium rounded-lg hover:bg-blue-900 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-blue-900 text-white font-medium rounded-xl hover:bg-blue-950 transition-colors disabled:opacity-50 shadow-sm"
           >
             {loading ? 'Регистрация...' : 'Зарегистрироваться'}
           </button>
@@ -274,7 +302,7 @@ const Register = () => {
 
         <p className="text-sm text-gray-500 text-center mt-6">
           Есть аккаунт?{' '}
-          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">Войти</Link>
+          <Link to="/login" className="text-blue-700 hover:text-blue-900 font-medium">Войти</Link>
         </p>
       </div>
     </div>

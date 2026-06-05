@@ -240,7 +240,7 @@ async function createTables() {
         if (existingSetting.length === 0) {
             await connection.query(
                 'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)',
-                ['require_email_verification', 'false']
+                ['require_email_verification', 'true']
             );
         }
 

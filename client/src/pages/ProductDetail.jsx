@@ -125,7 +125,7 @@ const ProductDetail = () => {
           {/* Изображение */}
           <div className="bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl overflow-hidden mb-6 flex items-center justify-center shadow-sm" style={{ minHeight: '250px' }}>
             {product.image_url && !imageError ? (
-              <img src={`http://localhost:5000${product.image_url}`} alt={product.name} className="w-full max-h-[350px] object-contain" onError={() => setImageError(true)} />
+              <img src={`${product.image_url}`} alt={product.name} className="w-full max-h-[350px] object-contain" onError={() => setImageError(true)} />
             ) : (
               <div className="text-center p-6">
                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">

@@ -118,7 +118,7 @@ const Learn = () => {
                 ) : (
                     <div className="relative">
                       <div className="aspect-video bg-slate-950 flex items-center justify-center">
-                        <img src={`http://localhost:5000${images[currentImageIndex]}`} alt=""
+                        <img src={`${images[currentImageIndex]}`} alt=""
                           className="max-w-full max-h-full object-contain" />
                       </div>
                     {images.length > 1 && (

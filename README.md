@@ -187,7 +187,7 @@ DB_NAME=arduino_learning
 JWT_SECRET=your_jwt_secret_key
 MAIL_USER=your_email@gmail.com
 MAIL_PASS=your_app_password
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://144.31.207.192
 ```
 
 ### 3. Установка зависимостей
@@ -214,7 +214,7 @@ cd client
 npm start
 ```
 
-Приложение будет доступно по адресу: `http://localhost:3000`
+Приложение будет доступно по адресу: `http://144.31.207.192`
 
 ---
 

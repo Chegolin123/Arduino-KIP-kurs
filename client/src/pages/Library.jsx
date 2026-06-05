@@ -126,8 +126,8 @@ const Library = () => {
                   {course.image_url ? (
                     <>
                       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm scale-105"
-                           style={{backgroundImage: `url(http://localhost:5000${course.image_url})`}} />
-                      <img src={`http://localhost:5000${course.image_url}`}
+                           style={{backgroundImage: `url(${course.image_url})`}} />
+                      <img src={`${course.image_url}`}
                            alt={course.title}
                            className="relative z-10 w-full h-full object-contain" />
                     </>

@@ -22,7 +22,7 @@ const VerifyEmail = () => {
   const verifyEmail = async () => {
     try {
       // Серверный роут делает редирект, поэтому проверяем через GET
-      window.location.href = `http://localhost:5000/api/auth/verify-email?token=${token}`;
+      window.location.href = `/api/auth/verify-email?token=${token}`;
     } catch (error) {
       setStatus('error');
       setMessage('Ошибка подтверждения');

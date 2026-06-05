@@ -148,8 +148,8 @@ const Catalog = () => {
                 {product.image_url ? (
                   <>
                     <div className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm scale-105"
-                         style={{backgroundImage: `url(http://localhost:5000${product.image_url})`}} />
-                    <img src={`http://localhost:5000${product.image_url}`} alt={product.name}
+                         style={{backgroundImage: `url(${product.image_url})`}} />
+                    <img src={`${product.image_url}`} alt={product.name}
                          className="relative z-10 w-full h-full object-contain" />
                   </>
                 ) : (

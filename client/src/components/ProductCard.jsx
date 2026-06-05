@@ -8,7 +8,7 @@ const ProductCard = ({ product }) => {
   const [imageError, setImageError] = useState(false);
 
   const imageUrl = product.image_url 
-    ? `http://localhost:5000${product.image_url}` 
+    ? `${product.image_url}` 
     : null;
 
   return (

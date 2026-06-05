@@ -26,7 +26,7 @@ transporter.verify((error, success) => {
 });
 
 const sendVerificationEmail = async (email, username, token) => {
-    const verificationUrl = `http://localhost:3000/login?token=${token}`;
+    const verificationUrl = `http://144.31.207.192/login?token=${token}`;
     
     const mailOptions = {
         from: '"КИП ФИН" <kip-kurs@mail.ru>',

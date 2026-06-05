@@ -24,7 +24,7 @@ const SectionForm = ({ form, onChange, onSubmit, onCancel, isEditing, existingMe
                 {existingMedia.images.map((img, idx) => (
                   <div key={idx} className="relative group">
                     <img
-                      src={`http://localhost:5000${img}`}
+                      src={`${img}`}
                       alt=""
                       className="w-full h-20 object-cover rounded-xl border border-slate-200"
                       onError={(e) => { e.target.style.display = 'none'; }}

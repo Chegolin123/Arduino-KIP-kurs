@@ -221,9 +221,56 @@ async function createTables() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
 
+        // Таблица настроек приложения
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS settings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                setting_key VARCHAR(100) NOT NULL UNIQUE,
+                setting_value TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Значение по умолчанию для require_email_verification
+        const [existingSetting] = await connection.query(
+            'SELECT setting_value FROM settings WHERE setting_key = ?',
+            ['require_email_verification']
+        );
+        if (existingSetting.length === 0) {
+            await connection.query(
+                'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)',
+                ['require_email_verification', 'false']
+            );
+        }
+
+        // Миграция: добавляем недостающие колонки в таблицу users
+        await migrateTableColumns(connection);
+
         console.log('✅ Таблицы созданы успешно');
     } finally {
         connection.release();
+    }
+}
+
+async function migrateTableColumns(connection) {
+    const columns = [
+        { name: 'institution', type: 'VARCHAR(255) DEFAULT NULL' },
+        { name: 'student_group', type: 'VARCHAR(100) DEFAULT NULL' },
+        { name: 'verification_token', type: 'VARCHAR(64) DEFAULT NULL' },
+        { name: 'email_verified', type: 'BOOLEAN DEFAULT FALSE' },
+    ];
+
+    for (const col of columns) {
+        const [existing] = await connection.query(
+            `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+            [col.name]
+        );
+        if (existing.length === 0) {
+            await connection.query(`ALTER TABLE users ADD COLUMN \`${col.name}\` ${col.type}`);
+            console.log(`  → Добавлена колонка users.${col.name}`);
+        }
     }
 }
 

@@ -2,7 +2,7 @@
 // Страница обучения — тест в конце главы, а не раздела
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Sidebar from '../components/Layout/Sidebar';
 import TestPlayer from '../components/TestPlayer';
@@ -101,6 +101,42 @@ const Learn = () => {
               <div className="h-4 bg-slate-200 rounded w-5/6"></div>
             </div>
           </div>
+        ) : chapterId && !sectionId && !showChapterTest ? (
+          /* Информация о главе */
+          <div className="max-w-4xl mx-auto p-6 sm:p-8">
+            <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-100/80">Глава</p>
+              <h1 className="text-2xl sm:text-3xl font-bold mt-2">{currentChapter?.title}</h1>
+              {currentChapter?.description && (
+                <p className="text-blue-100/90 mt-4 text-lg leading-relaxed">{currentChapter.description}</p>
+              )}
+            </div>
+
+            <div className="bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm mb-8">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Разделы главы</h2>
+              <div className="space-y-2">
+                {orderedSections.map((s, i) => (
+                  <Link
+                    key={s.id}
+                    to={`/learn/${chapterId}/${s.id}${courseId ? `?course_id=${courseId}` : ''}`}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-colors text-slate-700 hover:text-blue-700 no-underline"
+                  >
+                    <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium shrink-0">{i + 1}</span>
+                    <span className="font-medium">{s.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => setShowChapterTest(true)}
+                className="px-6 py-3 bg-blue-900 text-white font-medium rounded-full hover:bg-blue-950 transition-colors shadow-sm"
+              >
+                Пройти тест по главе
+              </button>
+            </div>
+          </div>
         ) : currentSection && !showChapterTest ? (
           <div className="max-w-4xl mx-auto p-6 sm:p-8">
             <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
@@ -117,7 +153,7 @@ const Learn = () => {
                   </div>
                 ) : (
                     <div className="relative">
-                      <div className="aspect-video bg-slate-950 flex items-center justify-center">
+                      <div className="aspect-video bg-white flex items-center justify-center">
                         <img src={`${images[currentImageIndex]}`} alt=""
                           className="max-w-full max-h-full object-contain" />
                       </div>
@@ -145,12 +181,8 @@ const Learn = () => {
             <div className="prose max-w-none text-slate-700 leading-relaxed mb-8 bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentSection.content || '') }} />
 
-            {/* Кнопка для перехода к тесту главы */}
-            {chapterId && isLastSection && !showChapterTest && (
+            {chapterId && !showChapterTest && (
               <div className="border-t border-slate-200 pt-6 mt-8 text-center bg-white/88 backdrop-blur-sm rounded-3xl px-6 py-8 shadow-sm border">
-                <p className="text-slate-500 text-sm mb-4">
-                  Вы прошли все разделы главы. Проверьте свои знания!
-                </p>
                 <button
                   onClick={() => setShowChapterTest(true)}
                   className="px-6 py-3 bg-blue-900 text-white font-medium rounded-full hover:bg-blue-950 transition-colors shadow-sm"
@@ -160,7 +192,7 @@ const Learn = () => {
               </div>
             )}
           </div>
-        ) : chapterId && (!sectionId || showChapterTest) ? (
+        ) : chapterId && showChapterTest ? (
           /* Тест в конце главы */
           <div className="max-w-4xl mx-auto p-6 sm:p-8">
             <div className="mb-6 rounded-3xl bg-gradient-to-r from-blue-900 via-blue-800 to-slate-900 text-white p-6 sm:p-8 shadow-xl">

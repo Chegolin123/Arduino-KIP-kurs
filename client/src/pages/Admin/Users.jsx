@@ -5,6 +5,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
+import { showConfirm } from '../../components/Modal';
 
 const AdminUsers = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -36,7 +37,7 @@ const AdminUsers = () => {
   };
 
   const handleRoleChange = async (userId, newRole) => {
-    if (!window.confirm(`Изменить роль на "${newRole}"?`)) return;
+    if (!(await showConfirm(`Изменить роль на "${newRole}"?`))) return;
     await API.put(`/auth/users/${userId}/role`, { role: newRole });
     loadUsers();
     if (selectedUser?.id === userId) loadUserStats(userId);

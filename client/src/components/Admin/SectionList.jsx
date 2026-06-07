@@ -17,7 +17,7 @@ const SectionList = ({ sections, onExportWord, onEdit, onDelete, onMoveUp, onMov
   const sorted = [...sections].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
 
   return (
-    <div className="space-y-3 lg:sticky lg:top-4">
+    <div className="space-y-3">
       {sorted.map((section, index) => (
         <div key={section.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
           <div className="flex justify-between items-start gap-3">

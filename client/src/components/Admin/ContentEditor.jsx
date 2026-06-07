@@ -125,18 +125,57 @@ const ContentEditor = ({ value, onChange, onAutoSave }) => {
       const anchorElement = anchorNode?.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode;
       const codeBlock = anchorElement?.closest?.('pre');
 
-      if (codeBlock && e.key === 'Enter' && !e.shiftKey) {
+      if (codeBlock && e.key === 'Enter') {
         e.preventDefault();
-        const paragraph = document.createElement('p');
-        paragraph.innerHTML = '<br>';
-        codeBlock.insertAdjacentElement('afterend', paragraph);
-        const range = document.createRange();
-        range.selectNodeContents(paragraph);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        const range = selection.getRangeAt(0);
+        const lineEmpty = !range.startContainer.textContent?.trim()
+          && range.startContainer.parentNode === codeBlock;
+
+        if (e.shiftKey || lineEmpty) {
+          const paragraph = document.createElement('p');
+          paragraph.innerHTML = '<br>';
+          codeBlock.insertAdjacentElement('afterend', paragraph);
+          const r = document.createRange();
+          r.selectNodeContents(paragraph);
+          r.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(r);
+        } else {
+          document.execCommand('insertLineBreak', false, null);
+        }
         handleInput();
         return;
+      }
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        const range = selection.getRangeAt(0);
+        const isCollapsed = range.collapsed;
+        if (!isCollapsed) return;
+
+        const node = e.key === 'Backspace' ? range.startContainer : null;
+        if (e.key === 'Backspace') {
+          if (range.startOffset === 0 && node?.previousSibling?.nodeName === 'PRE') {
+            e.preventDefault();
+            const pre = node.previousSibling;
+            const p = pre.nextElementSibling;
+            pre.remove();
+            if (p?.nodeName === 'P') p.remove();
+            handleInput();
+            return;
+          }
+        } else {
+          const node = range.startContainer;
+          const parent = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
+          const next = parent?.nextSibling;
+          if (next?.nodeName === 'PRE') {
+            e.preventDefault();
+            const p = next.nextElementSibling;
+            next.remove();
+            if (p?.nodeName === 'P') p.remove();
+            handleInput();
+            return;
+          }
+        }
       }
 
       if (e.ctrlKey && e.key === 's') {
@@ -216,7 +255,41 @@ const ContentEditor = ({ value, onChange, onAutoSave }) => {
 
   const insertHtml = (html) => {
     focusEditor();
-    document.execCommand('insertHTML', false, html);
+    const selection = window.getSelection();
+    if (!selection.rangeCount || !editorRef.current) {
+      editorRef.current.insertAdjacentHTML('beforeend', html);
+      handleInput();
+      return;
+    }
+    const range = selection.getRangeAt(0);
+
+    let node = range.startContainer;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'PRE' || node.nodeName === 'CODE') {
+        const p = document.createElement('p');
+        p.innerHTML = '<br>';
+        node.parentNode.insertBefore(p, node.nextSibling);
+        range.selectNodeContents(p);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        break;
+      }
+      node = node.parentNode;
+    }
+
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    const fragment = document.createDocumentFragment();
+    while (temp.firstChild) fragment.appendChild(temp.firstChild);
+
+    range.deleteContents();
+    range.insertNode(fragment);
+
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
     handleInput();
   };
 
@@ -253,20 +326,6 @@ const ContentEditor = ({ value, onChange, onAutoSave }) => {
     if (!codeText.trim()) return;
     const escaped = codeText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     insertHtml(`<pre><code class="language-arduino">${escaped}</code></pre><p><br></p>`);
-    requestAnimationFrame(() => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const paragraphs = editor.querySelectorAll('p');
-      const target = paragraphs[paragraphs.length - 1];
-      if (!target) return;
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      focusEditor();
-    });
     setCodeText('');
     setShowCodeInput(false);
   };

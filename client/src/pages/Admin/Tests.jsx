@@ -5,6 +5,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
+import { showAlert, showConfirm } from '../../components/Modal';
 
 const AdminTests = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -176,7 +177,7 @@ const AdminTests = () => {
         pass_percent: form.pass_percent,
         questions: form.questions
       });
-      alert('Тест сохранён');
+      await showAlert('Тест сохранён');
       resetForm();
     } catch (error) {
       const message = error.response?.data?.message || 'Ошибка сохранения теста';
@@ -185,7 +186,7 @@ const AdminTests = () => {
   };
 
   const handleDelete = async (chapterId) => {
-    if (!window.confirm('Удалить тест?')) return;
+    if (!(await showConfirm('Удалить тест?'))) return;
     await API.delete(`/tests/manage/chapter/${chapterId}`);
     resetForm();
   };

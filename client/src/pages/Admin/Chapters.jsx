@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
+import { showAlert, showConfirm } from '../../components/Modal';
 import ChapterForm from '../../components/Admin/ChapterForm';
 import ChapterList from '../../components/Admin/ChapterList';
 import SectionForm from '../../components/Admin/SectionForm';
@@ -64,7 +65,7 @@ const AdminChapters = () => {
   const handleSaveChapter = async (e) => {
     e.preventDefault();
     if (!chapterForm.title.trim()) return;
-    if (!chapterForm.course_id) return alert('Выберите курс');
+    if (!chapterForm.course_id) return showAlert('Выберите курс');
     try {
       const chapterData = { title: chapterForm.title, description: chapterForm.description, order_index: 0 };
       if (editingChapter) {
@@ -83,7 +84,7 @@ const AdminChapters = () => {
       }
       resetChapterForm();
       await loadData();
-    } catch (error) { alert('Ошибка сохранения главы'); }
+    } catch (error) { showAlert('Ошибка сохранения главы'); }
   };
 
   const handleEditChapter = (chapter) => {
@@ -94,7 +95,7 @@ const AdminChapters = () => {
   };
 
   const handleDeleteChapter = async (id) => {
-    if (window.confirm('Удалить главу?')) { await API.delete(`/chapters/${id}`); if (selectedChapter?.id === id) setSelectedChapter(null); loadData(); }
+    if (await showConfirm('Удалить главу?')) { await API.delete(`/chapters/${id}`); if (selectedChapter?.id === id) setSelectedChapter(null); loadData(); }
   };
 
   const resetChapterForm = () => { setEditingChapter(null); setChapterForm({ title: '', description: '', sectionsCount: 0, course_id: selectedCourseId || '' }); };
@@ -125,7 +126,8 @@ const AdminChapters = () => {
       resetSectionForm();
       setDraftStatus('');
       await Promise.all([loadData(), loadSelectedChapter()]);
-    } catch (error) { alert('Ошибка сохранения раздела'); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) { showAlert('Ошибка сохранения раздела'); }
   };
 
   const handleEditSection = async (section) => {
@@ -149,7 +151,7 @@ const AdminChapters = () => {
     setShowSectionForm(true);
   };
 
-  const handleDeleteSection = async (id) => { if (window.confirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); await Promise.all([loadData(), loadSelectedChapter()]); } };
+  const handleDeleteSection = async (id) => { if (await showConfirm('Удалить раздел?')) { await API.delete(`/sections/${id}`); await Promise.all([loadData(), loadSelectedChapter()]); } };
   const handleDeleteImage = async (sectionId, imageIndex) => { await API.delete(`/sections/${sectionId}/images/${imageIndex}`); const res = await API.get(`/sections/${sectionId}`); setEditingSection(res.data.section); await Promise.all([loadData(), loadSelectedChapter()]); };
 
   const handleSectionAutoSave = async (content) => {
@@ -179,7 +181,7 @@ const AdminChapters = () => {
       await API.put('/sections/reorder', { orders });
       await Promise.all([loadData(), loadSelectedChapter()]);
     } catch (error) {
-      alert('Ошибка изменения порядка');
+      showAlert('Ошибка изменения порядка');
     }
   };
 
@@ -188,7 +190,7 @@ const AdminChapters = () => {
   const handleExportExcel = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/excel/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.xlsx`); };
   const handleExportWord = async (sectionId) => { const res = await API.get(`/sections/export/word/${sectionId}`, { responseType: 'blob' }); downloadBlob(res.data, `section_${sectionId}.doc`); };
   const handleExportJson = async () => { if (!selectedChapter) return; const res = await API.get(`/sections/export/json/${selectedChapter.id}`, { responseType: 'blob' }); downloadBlob(res.data, `chapter_${selectedChapter.id}.json`); };
-  const handleImportExcel = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file);   const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, fd); alert(res.data.message); await Promise.all([loadData(), loadSelectedChapter()]); e.target.value = ''; };
+  const handleImportExcel = async (e) => { const file = e.target.files[0]; if (!file || !selectedChapter) return; const fd = new FormData(); fd.append('file', file);   const res = await API.post(`/sections/import/excel/${selectedChapter.id}`, fd); await showAlert(res.data.message); await Promise.all([loadData(), loadSelectedChapter()]); e.target.value = ''; };
   
   // Импорт одного DOCX
   const handleImportDocx = async (e) => { 
@@ -200,12 +202,12 @@ const AdminChapters = () => {
     fd.append('title', file.name.replace(/\.docx$/i, '')); 
     try { 
       const res = await API.post('/sections/import/docx', fd); 
-      alert(res.data.message); 
+      await showAlert(res.data.message); 
       if (res.data.warnings?.length) console.warn('Предупреждения:', res.data.warnings); 
       await Promise.all([loadData(), loadSelectedChapter()]);
     } catch (error) { 
       console.error('Ошибка импорта DOCX:', error);
-      alert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
+      await showAlert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
     } 
     e.target.value = ''; 
   };
@@ -219,12 +221,12 @@ const AdminChapters = () => {
     for (let i = 0; i < files.length; i++) fd.append('files', files[i]); 
     try { 
       const res = await API.post('/sections/import/docx/batch', fd); 
-      alert(res.data.message); 
+      await showAlert(res.data.message); 
       if (res.data.errors?.length) console.warn('Ошибки:', res.data.errors); 
       await Promise.all([loadData(), loadSelectedChapter()]);
     } catch (error) { 
       console.error('Ошибка пакетного импорта DOCX:', error);
-      alert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
+      await showAlert('Ошибка импорта DOCX: ' + (error.response?.data?.message || error.message)); 
     } 
     e.target.value = ''; 
   };
@@ -292,6 +294,12 @@ const AdminChapters = () => {
                   {showSectionForm && <SectionForm form={sectionForm} onChange={setSectionForm} onSubmit={handleSaveSection} onCancel={resetSectionForm} isEditing={!!editingSection} existingMedia={editingSection?.media} onDeleteImage={(idx) => handleDeleteImage(editingSection.id, idx)} onAutoSave={handleSectionAutoSave} />}
                 </div>
                 <SectionList sections={selectedChapter.sections} onExportWord={handleExportWord} onEdit={handleEditSection} onDelete={handleDeleteSection} onMoveUp={handleMoveUp} onMoveDown={handleMoveDown} />
+                <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 space-y-1">
+                  <p className="font-medium text-slate-600">Горячие клавиши редактора контента:</p>
+                  <p><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Ctrl+S</kbd> — сохранить черновик · <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Ctrl+Z</kbd> отменить · <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Ctrl+Y</kbd> повторить</p>
+                  <p><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Enter</kbd> внутри блока кода — новая строка · <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Shift+Enter</kbd> на пустой строке — выход из блока кода</p>
+                  <p><kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Backspace</kbd> перед блоком кода · <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 font-mono text-[11px]">Delete</kbd> после блока кода — удаление блока</p>
+                </div>
               </>
             ) : (
               <div className="bg-white rounded-xl border border-gray-200 p-12 text-center mt-8">

@@ -26,6 +26,23 @@ body {
   flex-direction: column;
 }
 
+/* Стили для .doc-content (импортированный HTML из Word/документов) */
+.doc-content{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;color:#333}
+.doc-content h1{font-size:18pt;font-weight:bold;margin:12pt 0 6pt 0;color:#1a1a1a}
+.doc-content h2{font-size:16pt;font-weight:bold;margin:10pt 0 4pt 0;color:#2d2d2d}
+.doc-content h3{font-size:14pt;font-weight:bold;margin:8pt 0 3pt 0;color:#404040}
+.doc-content p{margin:0 0 6pt 0;text-align:justify}
+.doc-content table{border-collapse:collapse;width:100%;margin:12pt 0}
+.doc-content td,.doc-content th{border:1px solid #ddd;padding:8px}
+.doc-content th{background-color:#f5f5f5;font-weight:bold}
+.doc-content ul,.doc-content ol{margin:6pt 0 6pt 20pt}
+.doc-content li{margin-bottom:3pt}
+.doc-content pre{background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:6px;overflow-x:auto}
+.doc-content code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+.doc-content pre code{background:transparent;padding:0;color:inherit}
+.doc-content strong{font-weight:bold}
+.doc-content em{font-style:italic}
+
 /* Стили для контента разделов */
 .prose {
   line-height: 1.8;

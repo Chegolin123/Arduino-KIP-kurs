@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
+import { showConfirm } from '../../components/Modal';
 
 const AdminCourses = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -57,7 +58,7 @@ const AdminCourses = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Удалить курс?')) {
+    if (await showConfirm('Удалить курс?')) {
       await API.delete(`/courses/${id}`);
       loadData();
     }

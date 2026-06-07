@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import API from '../../api/axios';
+import { showAlert } from '../../components/Modal';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -63,7 +64,7 @@ const AdminDashboard = () => {
       await API.put('/settings/require_email_verification', { value: String(newValue) });
       setRequireVerification(newValue);
     } catch (error) {
-      alert('Ошибка обновления настройки');
+      await showAlert('Ошибка обновления настройки');
     }
   };
 

@@ -63,11 +63,6 @@ const ChapterList = ({ chapters, selectedId, loading, onSelect, onEdit, onDelete
                   </div>
                   <div className="flex space-x-1 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => { e.stopPropagation(); onEdit(chapter); }}
-                      className="text-xs p-1.5 rounded-lg hover:bg-white"
-                      title="Редактировать"
-                    >✏️</button>
-                    <button
                       onClick={(e) => { e.stopPropagation(); onDelete(chapter.id); }}
                       className="text-xs p-1.5 rounded-lg hover:bg-white"
                       title="Удалить"

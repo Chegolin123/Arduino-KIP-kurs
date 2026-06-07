@@ -18,7 +18,6 @@
 - [Установка и запуск](#установка-и-запуск)
 - [API Endpoints](#api-endpoints)
 - [Разработка](#разработка)
-- [Лицензия](#лицензия)
 
 ---
 
@@ -29,21 +28,21 @@
 | Функция | Описание |
 |---------|----------|
 | **Библиотека курсов** | Выбор курса по уровню сложности |
-| **Учебные материалы** | Главы и разделы с видео, изображениями и текстом |
-| **Тестирование** | Прохождение тестов в конце каждой главы |
+| **Учебные материалы** | Главы и разделы с видео, изображениями, текстом и подсветкой кода |
+| **Тестирование** | Прохождение тестов в конце каждой главы с подсчётом результата |
 | **Профиль** | Прогресс, результаты тестов, успеваемость |
-| **Каталог компонентов** | Карточки элементов Arduino с характеристиками |
+| **Каталог компонентов** | Карточки элементов Arduino с характеристиками и поиском |
 
 ### Для администраторов
 
 | Функция | Описание |
 |---------|----------|
-| **Управление курсами** | CRUD курсов |
-| **Управление главами** | Разделы с визуальным редактором контента |
-| **Управление тестами** | Создание вопросов с вариантами ответов |
-| **Управление пользователями** | Фильтрация по группам, статистика |
-| **Каталог** | CRUD товаров (компоненты Arduino) |
-| **Экспорт/Импорт** | Excel, Word, JSON |
+| **Управление курсами** | CRUD курсов, привязка глав |
+| **Управление главами** | Разделы с WYSIWYG-редактором контента (HTML, код, таблицы, изображения) |
+| **Управление тестами** | Создание вопросов с вариантами ответов, указание правильных |
+| **Управление пользователями** | Фильтрация по группам, смена ролей, статистика |
+| **Каталог** | CRUD товаров (компоненты Arduino) с характеристиками |
+| **Экспорт/Импорт** | Excel, Word, JSON — выгрузка разделов и контента |
 
 ---
 
@@ -72,7 +71,7 @@
 | JWT | 9 | Аутентификация |
 | bcryptjs | 3 | Хеширование паролей |
 | Multer | 2 | Загрузка файлов |
-| Nodemailer | 8 | Отправка писем |
+| Nodemailer | 8 | Отправка писем (SMTP Mail.ru) |
 | ExcelJS | 4 | Генерация Excel |
 | Mammoth | 1 | Парсинг Word |
 | express-validator | 7 | Валидация |
@@ -103,8 +102,9 @@ Arduino/
 │       │   │   ├── Header.jsx
 │       │   │   └── Sidebar.jsx
 │       │   ├── CatalogSidebar.jsx
+│       │   ├── Modal.jsx           # Кастомное модальное окно
 │       │   ├── ProductCard.jsx
-│       │   └── TestPlayer.jsx
+│       │   └── TestPlayer.jsx      # Прохождение тестов
 │       ├── pages/                  # Страницы
 │       │   ├── Admin/
 │       │   │   ├── Chapters.jsx
@@ -132,13 +132,13 @@ Arduino/
 │       └── index.js
 ├── server/                         # Express-сервер
 │   ├── config/
-│   │   ├── database.js             # Подключение к MySQL
-│   │   └── mailer.js               # Настройка Nodemailer
+│   │   ├── database.js             # Подключение к MySQL + схема
+│   │   └── mailer.js               # Настройка Nodemailer (Mail.ru)
 │   ├── middleware/
 │   │   ├── auth.js                 # JWT middleware
 │   │   └── upload.js               # Multer конфиг
 │   ├── routes/
-│   │   ├── auth.js                 # Регистрация, логин, верификация
+│   │   ├── auth.js                 # Регистрация, логин, верификация email
 │   │   ├── chapters.js             # CRUD глав
 │   │   ├── courses.js              # CRUD курсов
 │   │   ├── products.js             # Каталог компонентов
@@ -149,12 +149,10 @@ Arduino/
 │   ├── .env                        # Переменные окружения
 │   ├── package.json
 │   └── server.js                   # Точка входа
-├── client/
-│   └── .gitignore
-├── server.env                      # Пример .env
+├── .env.example                    # Пример .env
 ├── .gitignore
-├── README.md
-└── testREAD.md                     # Данный файл
+├── .gitattributes
+└── README.md
 ```
 
 ---
@@ -185,9 +183,9 @@ DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=arduino_learning
 JWT_SECRET=your_jwt_secret_key
-MAIL_USER=your_email@gmail.com
+MAIL_USER=your_email@mail.ru
 MAIL_PASS=your_app_password
-CLIENT_URL=http://144.31.207.192
+CLIENT_URL=http://localhost:3000
 ```
 
 ### 3. Установка зависимостей
@@ -214,7 +212,7 @@ cd client
 npm start
 ```
 
-Приложение будет доступно по адресу: `http://144.31.207.192`
+Приложение будет доступно по адресу: `http://localhost:3000`
 
 ---
 
@@ -225,20 +223,24 @@ npm start
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
 | POST | `/login` | Вход в систему |
-| POST | `/register` | Регистрация |
+| POST | `/register` | Регистрация с подтверждением email |
+| GET | `/verify-email?token=` | Подтверждение email |
+| POST | `/resend-verification` | Повторная отправка письма |
 | GET | `/profile` | Профиль пользователя |
 | PUT | `/profile` | Обновление профиля |
-| GET | `/verify/:token` | Подтверждение email |
 
 ### Курсы (`/api/courses`)
 
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
 | GET | `/` | Все курсы |
+| GET | `/admin` | Курсы с главами (админ) |
 | GET | `/:id` | Курс по ID |
 | POST | `/` | Создать курс |
 | PUT | `/:id` | Обновить курс |
 | DELETE | `/:id` | Удалить курс |
+| POST | `/:courseId/chapters/:chapterId` | Привязать главу |
+| DELETE | `/:courseId/chapters/:chapterId` | Отвязать главу |
 
 ### Главы (`/api/chapters`)
 
@@ -255,19 +257,25 @@ npm start
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
 | GET | `/chapter/:chapterId` | Разделы главы |
+| GET | `/:id` | Раздел по ID (c медиа) |
 | POST | `/` | Создать раздел |
 | PUT | `/:id` | Обновить раздел |
 | DELETE | `/:id` | Удалить раздел |
+| GET | `/export/excel/:chapterId` | Экспорт в Excel |
+| GET | `/export/json/:chapterId` | Экспорт в JSON |
+| POST | `/import/word` | Импорт из Word |
+| POST | `/upload/images` | Загрузка изображений |
 
 ### Тесты (`/api/tests`)
 
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
-| GET | `/chapter/:chapterId` | Тесты главы |
-| POST | `/` | Создать тест |
-| PUT | `/:id` | Обновить тест |
-| DELETE | `/:id` | Удалить тест |
+| GET | `/chapter/:chapterId` | Тест главы (публичный) |
+| GET | `/manage/chapter/:chapterId` | Тест главы (админ) |
+| POST | `/manage` | Создать/обновить тест |
+| DELETE | `/manage/chapter/:chapterId` | Удалить тест главы |
 | POST | `/check` | Проверка ответов |
+| GET | `/results` | Результаты тестов пользователя |
 
 ### Каталог (`/api/products`)
 
@@ -294,34 +302,29 @@ npm start
 
 | Команда | Описание |
 |---------|----------|
-| `npm start` (client) | Запуск фронтенда |
-| `npm start` (server) | Запуск сервера |
+| `npm start` (client) | Запуск фронтенда (порт 3000) |
+| `npm start` (server) | Запуск сервера (порт 5000) |
 | `npm run dev` (server) | Запуск с nodemon |
-| `npm run build` (client) | Сборка фронтенда |
+| `npm run build` (client) | Сборка фронтенда в `client/build/` |
 
 ### Роутинг
 
 ```
-/                     — Главная
-/library              — Библиотека курсов
-/learn                — Обучение
-/learn/:chapterId     — Конкретная глава
-/learn/:chapterId/:sectionId — Раздел главы
-/catalog              — Каталог компонентов
-/catalog/:id          — Детальная карточка товара
-/login                — Вход
-/register             — Регистрация
-/profile              — Профиль пользователя
-/admin                — Админ-панель
-/admin/courses        — Управление курсами
-/admin/chapters       — Управление главами
-/admin/tests          — Управление тестами
-/admin/products       — Управление каталогом
-/admin/users          — Управление пользователями
+/                          — Главная
+/library                   — Библиотека курсов
+/learn                     — Обучение
+/learn/:chapterId          — Информация о главе
+/learn/:chapterId/:section — Раздел главы
+/catalog                   — Каталог компонентов
+/catalog/:id               — Детальная карточка товара
+/login                     — Вход
+/register                  — Регистрация
+/profile                   — Профиль пользователя
+/admin                     — Админ-панель (дашборд)
+/admin/courses             — Управление курсами
+/admin/chapters            — Управление главами
+/admin/tests               — Управление тестами
+/admin/products            — Управление каталогом
+/admin/users               — Управление пользователями
+/verify-email              — Подтверждение email
 ```
-
----
-
-## Лицензия
-
-Данный проект разработан для колледжа **КИП ФИН**.

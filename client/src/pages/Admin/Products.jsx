@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
+import { showAlert, showConfirm } from '../../components/Modal';
 
 const AdminProducts = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
@@ -47,7 +48,7 @@ const AdminProducts = () => {
         if (key.trim()) specsObj[key.trim()] = value;
         else valid = false;
       });
-      if (!valid) { alert('Заполните название характеристики'); return; }
+      if (!valid) { showAlert('Заполните название характеристики'); return; }
       formData.append('specifications', JSON.stringify(specsObj));
     }
     if (image) formData.append('image', image);
@@ -81,7 +82,7 @@ const AdminProducts = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Удалить товар?')) {
+    if (await showConfirm('Удалить товар?')) {
       await API.delete(`/products/${id}`);
       loadProducts();
     }

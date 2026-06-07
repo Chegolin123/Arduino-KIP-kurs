@@ -99,7 +99,7 @@ const Home = () => {
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center">
                   {isAuthenticated ? (
-                      <Link to="/learn" className="inline-flex items-center justify-center gap-2 bg-white/90 text-primary px-7 py-4 rounded-full font-medium shadow-md shadow-black/8 ring-1 ring-white/50 hover:bg-white hover:shadow-lg hover:shadow-black/10 transition-all duration-300 active:scale-[0.99]">
+                      <Link to="/library" className="inline-flex items-center justify-center gap-2 bg-white/90 text-primary px-7 py-4 rounded-full font-medium shadow-md shadow-black/8 ring-1 ring-white/50 hover:bg-white hover:shadow-lg hover:shadow-black/10 transition-all duration-300 active:scale-[0.99]">
                         <span className="material-symbols-outlined text-primary/80">play_circle</span>
                         Продолжить обучение
                       </Link>

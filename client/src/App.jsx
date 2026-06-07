@@ -22,6 +22,7 @@ import AdminChapters from './pages/Admin/Chapters';
 import AdminTests from './pages/Admin/Tests';
 import AdminProducts from './pages/Admin/Products';
 import AdminUsers from './pages/Admin/Users';
+import Modal from './components/Modal';
 
 const PublicLayout = () => (
   <div className="flex flex-col min-h-screen">
@@ -92,6 +93,7 @@ function App() {
   return (
     <Router>
       <AppContent />
+      <Modal />
     </Router>
   );
 }

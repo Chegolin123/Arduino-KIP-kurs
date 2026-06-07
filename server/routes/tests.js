@@ -70,7 +70,7 @@ async function getFullTest(testId) {
 
         for (let question of questions) {
             const [answers] = await connection.query(
-                'SELECT id, answer, order_index FROM answers WHERE question_id = ? ORDER BY order_index',
+                'SELECT id, answer, is_correct, order_index FROM answers WHERE question_id = ? ORDER BY order_index',
                 [question.id]
             );
             question.answers = answers;

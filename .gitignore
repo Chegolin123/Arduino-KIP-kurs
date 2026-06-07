@@ -50,3 +50,11 @@ server/uploads/excel/
 # Кэш
 .cache/
 .eslintcache
+
+# Дизайн-файлы
+design/
+
+# Временные скрипты
+*.py
+temp/
+scripts/

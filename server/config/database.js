@@ -72,6 +72,7 @@ async function createTables() {
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
                 order_index INT NOT NULL DEFAULT 0,
+                course_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -205,6 +206,22 @@ async function createTables() {
             await connection.query('ALTER TABLE tests DROP COLUMN section_id');
         }
 
+        // Таблица курсов (обёртка для глав)
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS courses (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                image_url VARCHAR(500),
+                duration VARCHAR(50),
+                difficulty ENUM('beginner', 'intermediate', 'advanced') DEFAULT 'beginner',
+                order_index INT NOT NULL DEFAULT 0,
+                is_published BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
         // Таблица товаров/элементов Arduino
         await connection.query(`
             CREATE TABLE IF NOT EXISTS products (
@@ -271,6 +288,15 @@ async function migrateTableColumns(connection) {
             await connection.query(`ALTER TABLE users ADD COLUMN \`${col.name}\` ${col.type}`);
             console.log(`  → Добавлена колонка users.${col.name}`);
         }
+    }
+
+    // Миграция: course_id в chapters
+    const [chCol] = await connection.query(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'course_id'"
+    );
+    if (chCol.length === 0) {
+        await connection.query('ALTER TABLE chapters ADD COLUMN course_id INT NULL');
+        console.log('  → Добавлена колонка chapters.course_id');
     }
 }
 

@@ -72,7 +72,7 @@ const Home = () => {
         <section
           className="relative overflow-hidden min-h-[600px] flex items-center"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 35, 111, 0.62), rgba(0, 35, 111, 0.62)), url('https://lh3.googleusercontent.com/aida/AP1WRLtUUjd6FygbZYv2Q7JhxUVAIvebVb7L1n3UZgm-B5wdvGBpw2uB2sAxO4XSYH1DSY6Y3aFYbzo2KpLf5UIYSARUE19ZB2MGwdAd2qH_bBZchWCtvt9mjTQu_8N9P_lf3hSOoW4muCll9rg0VSa7M0Z6FId6QQ1IbWUDH7chbYNQQ5IRk9NaHmfAts8rLrUN0-NWyDuoFj-XDvOCqE-pMNzHtOS1HgDo8TjE3JlOazYvap0B5eoTh5uWHjg')`,
+            backgroundImage: `linear-gradient(rgba(0, 35, 111, 0.62), rgba(0, 35, 111, 0.62)), url('/images/hero-bg.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

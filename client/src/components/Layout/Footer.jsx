@@ -58,8 +58,8 @@ const Footer = () => {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center text-on-surface-variant text-xs uppercase tracking-[0.12em] gap-2">
           <p>© {new Date().getFullYear()} MicroMiR. Все права защищены.</p>
           <div className="flex gap-6">
-            <a className="hover:text-primary transition-colors" href="#">Политика конфиденциальности</a>
-            <a className="hover:text-primary transition-colors" href="#">Условия использования</a>
+            <span className="text-on-surface-variant">Политика конфиденциальности</span>
+            <span className="text-on-surface-variant">Условия использования</span>
           </div>
         </div>
       </div>

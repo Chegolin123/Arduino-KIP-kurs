@@ -167,6 +167,7 @@ const Register = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Имя</label>
             <input
               type="text"
+              autoComplete="username"
               value={formData.username}
               onChange={(e) => setFormData({...formData, username: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -180,6 +181,8 @@ const Register = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -269,6 +272,7 @@ const Register = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Пароль</label>
             <input
               type="password"
+              autoComplete="new-password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -282,6 +286,7 @@ const Register = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Подтверждение пароля</label>
             <input
               type="password"
+              autoComplete="new-password"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"

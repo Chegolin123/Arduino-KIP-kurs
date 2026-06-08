@@ -1,5 +1,3 @@
-// Расположение: C:\OSPanel\domains\Arduino\client\src\components\Layout\Sidebar.jsx
-
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,6 +8,7 @@ const Sidebar = ({ courseId }) => {
   const { chapters, loading } = useSelector((state) => state.chapters);
   const { chapterId, sectionId } = useParams();
   const [expandedChapters, setExpandedChapters] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (chapterId) {
@@ -29,26 +28,24 @@ const Sidebar = ({ courseId }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="w-72 bg-gray-50 border-r border-gray-200 p-6">
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-3 bg-gray-200 rounded w-full"></div>
-          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-        </div>
+  const content = (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+          Содержание курса
+        </h3>
+        <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 rounded hover:bg-gray-200 text-gray-500" aria-label="Закрыть">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
-    );
-  }
-
-  return (
-    <aside className="w-72 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-        Содержание курса
-      </h3>
       
       {chapters.length === 0 ? (
-        <p className="text-sm text-gray-400">Материалы не добавлены</p>
+        <div className="text-sm text-gray-400 space-y-2">
+          <p>Материалы не добавлены</p>
+          <Link to="/library" className="text-blue-600 hover:text-blue-800 font-medium block">← Вернуться в библиотеку</Link>
+        </div>
       ) : (
         <nav className="space-y-4">
           {chapters.map((chapter) => {
@@ -72,6 +69,7 @@ const Sidebar = ({ courseId }) => {
                   to={`/learn/${chapter.id}${courseId ? `?course_id=${courseId}` : ''}`}
                   onClick={() => {
                     if (!isExpanded) toggleChapter(chapter.id);
+                    setSidebarOpen(false);
                   }}
                   className={`block text-sm font-medium px-2 py-1 rounded transition-colors flex-1 ${
                     chapter.id === parseInt(chapterId) && !sectionId
@@ -89,6 +87,7 @@ const Sidebar = ({ courseId }) => {
                     <li key={section.id}>
                       <Link
                         to={`/learn/${chapter.id}/${section.id}${courseId ? `?course_id=${courseId}` : ''}`}
+                        onClick={() => setSidebarOpen(false)}
                         className={`block text-sm py-1.5 px-2 rounded transition-colors ${
                           section.id === parseInt(sectionId)
                             ? 'text-blue-600 bg-blue-50 font-medium'
@@ -106,7 +105,53 @@ const Sidebar = ({ courseId }) => {
           })}
         </nav>
       )}
-    </aside>
+    </>
+  );
+
+  if (loading) {
+    return (
+      <>
+        <button onClick={() => setSidebarOpen(true)}
+          className="md:hidden fixed bottom-4 left-4 z-30 w-12 h-12 bg-blue-900 text-white rounded-full shadow-lg flex items-center justify-center"
+          aria-label="Открыть содержание">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="hidden md:block w-72 bg-gray-50 border-r border-gray-200 p-6">
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <button onClick={() => setSidebarOpen(true)}
+        className="md:hidden fixed bottom-4 left-4 z-30 w-12 h-12 bg-blue-900 text-white rounded-full shadow-lg flex items-center justify-center"
+        aria-label="Открыть содержание">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <aside className="hidden md:block w-72 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto">
+        {content}
+      </aside>
+
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto shadow-xl">
+            {content}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

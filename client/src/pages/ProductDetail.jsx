@@ -11,6 +11,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => { loadProduct(); }, [id]);
 
@@ -19,7 +20,7 @@ const ProductDetail = () => {
       const response = await API.get(`/products/${id}`);
       setProduct(response.data.product);
     } catch (error) {
-      console.error('Ошибка загрузки товара:', error);
+      setLoadError('Не удалось загрузить товар. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
@@ -75,7 +76,16 @@ const ProductDetail = () => {
         <CatalogSidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-slate-500 bg-white/85 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm px-8 py-12">
-            <p className="text-xl text-slate-700">Товар не найден</p>
+            {loadError ? (
+              <>
+                <div className="text-4xl mb-3">⚠️</div>
+                <p className="text-lg text-slate-700">{loadError}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-xl text-slate-700">Товар не найден</p>
+              </>
+            )}
             <Link to="/catalog" className="text-blue-700 hover:text-blue-900 mt-4 inline-block">← Вернуться в каталог</Link>
           </div>
         </div>
@@ -170,7 +180,8 @@ const ProductDetail = () => {
             <div className="bg-white/88 backdrop-blur-sm border border-slate-200 rounded-3xl p-6 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900 mb-4">Характеристики</h2>
               <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[300px]">
                   <tbody>
                     {Object.entries(product.specifications).map(([key, value], idx) => (
                       <tr key={key} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
@@ -180,6 +191,7 @@ const ProductDetail = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}

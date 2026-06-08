@@ -165,20 +165,25 @@ const AdminProducts = () => {
 
         <div className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
           {loading ? <p className="p-6 text-slate-400">Загрузка...</p> : products.length === 0 ? <p className="p-6 text-slate-400">Нет товаров</p> : (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b"><tr><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Товар</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Категория</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Цена</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Наличие</th><th className="text-right px-6 py-3 text-xs text-slate-500 uppercase">Действия</th></tr></thead>
-              <tbody className="divide-y">
-                {products.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4"><div className="flex items-center space-x-3"><div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">📦</div><div><p className="text-sm font-medium text-slate-900">{p.name}</p></div></div></td>
-                    <td className="px-6 py-4">{p.category && <span className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{p.category}</span>}</td>
-                    <td className="px-6 py-4 text-sm">{p.price} ₽</td>
-                    <td className="px-6 py-4"><span className={`text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>{p.stock > 0 ? `${p.stock} шт.` : 'Нет'}</span></td>
-                    <td className="px-6 py-4 text-right"><button onClick={() => handleEdit(p)} className="text-sm text-blue-600 mr-3">Изменить</button><button onClick={() => handleDelete(p.id)} className="text-sm text-red-600">Удалить</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead className="bg-slate-50 border-b"><tr><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Товар</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Категория</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Цена</th><th className="text-left px-6 py-3 text-xs text-slate-500 uppercase">Наличие</th><th className="text-right px-6 py-3 text-xs text-slate-500 uppercase">Действия</th></tr></thead>
+                <tbody className="divide-y">
+                  {products.map(p => (
+                    <tr key={p.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4"><div className="flex items-center space-x-3"><div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">📦</div><div><p className="text-sm font-medium text-slate-900">{p.name}</p></div></div></td>
+                      <td className="px-6 py-4">{p.category && <span className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{p.category}</span>}</td>
+                      <td className="px-6 py-4 text-sm">{p.price} ₽</td>
+                      <td className="px-6 py-4"><span className={`text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>{p.stock > 0 ? `${p.stock} шт.` : 'Нет'}</span></td>
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <button onClick={() => handleEdit(p)} className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] px-3 text-sm text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">Изменить</button>
+                        <button onClick={() => handleDelete(p.id)} className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] px-3 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors">Удалить</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

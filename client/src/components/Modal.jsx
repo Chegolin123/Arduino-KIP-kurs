@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 let confirmResolve = null;
@@ -22,6 +22,7 @@ export const showAlert = (message) => {
 
 const Modal = () => {
   const [data, setData] = useState(null);
+  const modalRef = useRef(null);
 
   const handleEvent = useCallback(() => {
     setData(window.__modalData);
@@ -34,15 +35,36 @@ const Modal = () => {
   }, [handleEvent]);
 
   useEffect(() => {
-    if (data) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
+    if (data) {
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => modalRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = '';
+    }
     return () => { document.body.style.overflow = ''; };
   }, [data]);
 
-  if (!data) return null;
-
   const close = () => {
     setData(null);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      if (data.type === 'alert') handleAlert();
+      else handleConfirm(false);
+    }
+    if (e.key === 'Tab' && modalRef.current) {
+      const focusable = modalRef.current.querySelectorAll('button:not([disabled])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    }
   };
 
   const handleConfirm = (value) => {
@@ -61,15 +83,20 @@ const Modal = () => {
     close();
   };
 
-  const isConfirm = data.type === 'confirm';
+  const isConfirm = data?.type === 'confirm';
+
+  if (!data) return null;
 
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget && !isConfirm) close(); }}
+      onKeyDown={handleKeyDown}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm mx-4 p-6 animate-in"
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm mx-4 p-6 animate-in outline-none"
         style={{ animation: 'modalIn 0.15s ease-out' }}
       >
         <div className="text-center">

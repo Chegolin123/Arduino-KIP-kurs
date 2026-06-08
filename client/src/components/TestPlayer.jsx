@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import API from '../api/axios';
+import { showAlert, showConfirm } from './Modal';
 
 const TestPlayer = ({ chapterId, onComplete }) => {
   const [test, setTest] = useState(null);
@@ -55,6 +56,7 @@ const TestPlayer = ({ chapterId, onComplete }) => {
       const raw = localStorage.getItem(attemptStorageKey);
       if (!raw) return;
       const saved = JSON.parse(raw);
+      if (saved?.timestamp && Date.now() - saved.timestamp > 86400000) { localStorage.removeItem(attemptStorageKey); return; }
       if (saved?.testId === test.id && saved?.answers) {
         setUserAnswers(saved.answers);
         if (typeof saved.currentQuestionIndex === 'number') {
@@ -73,6 +75,7 @@ const TestPlayer = ({ chapterId, onComplete }) => {
         testId: test.id,
         answers: userAnswers,
         currentQuestionIndex,
+        timestamp: Date.now(),
       }));
     } catch (error) {
       console.warn('Не удалось сохранить состояние попытки:', error);
@@ -84,7 +87,7 @@ const TestPlayer = ({ chapterId, onComplete }) => {
     
     const unanswered = test.questions.filter(q => !userAnswers[q.id]);
     if (unanswered.length > 0) {
-      if (!window.confirm(`Вы не ответили на ${unanswered.length} вопросов. Отправить?`)) return;
+      if (!(await showConfirm(`Вы не ответили на ${unanswered.length} вопросов. Отправить?`))) return;
     }
 
     setSubmitting(true);
@@ -97,7 +100,7 @@ const TestPlayer = ({ chapterId, onComplete }) => {
       if (attemptStorageKey) localStorage.removeItem(attemptStorageKey);
       if (onComplete) onComplete(response.data.result);
     } catch (error) {
-      alert('Ошибка проверки теста');
+      await showAlert('Ошибка проверки теста');
     } finally {
       setSubmitting(false);
     }
@@ -191,13 +194,13 @@ const TestPlayer = ({ chapterId, onComplete }) => {
                 key={question.id}
                 type="button"
                 onClick={() => setCurrentQuestionIndex(idx)}
-                className={`px-3 py-2 rounded-full text-xs font-medium transition-colors border ${
-                  active
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : answered
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                }`}
+                className={`min-w-[44px] min-h-[44px] px-3 py-2 rounded-full text-xs font-medium transition-colors border ${
+                   active
+                     ? 'bg-blue-900 text-white border-blue-900'
+                     : answered
+                       ? 'bg-green-50 text-green-700 border-green-200'
+                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                 }`}
               >
                 {idx + 1}
               </button>

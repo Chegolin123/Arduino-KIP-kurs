@@ -132,8 +132,11 @@ const AdminCourses = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {loading ? <p className="text-slate-400">Загрузка...</p> :
-            courses.length === 0 ? <p className="text-slate-400 col-span-2 bg-white/85 backdrop-blur-sm border border-slate-200 rounded-3xl p-8">Нет курсов</p> :
+          {loading ? (
+            <div className="col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[1,2,3,4].map(n => <div key={n} className="h-44 bg-white/85 backdrop-blur-sm border border-slate-200 rounded-3xl animate-pulse" />)}
+            </div>
+          ) : courses.length === 0 ? <p className="text-slate-400 col-span-2 bg-white/85 backdrop-blur-sm border border-slate-200 rounded-3xl p-8">Нет курсов</p> :
             courses.map(course => (
               <div key={course.id} className="bg-white/88 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-sm">
                 <div className="flex justify-between items-start mb-4">

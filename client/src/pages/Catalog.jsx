@@ -14,6 +14,7 @@ const Catalog = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   const categories = ['Микроконтроллеры', 'Датчики', 'Дисплеи', 'Моторы', 'Коммуникация', 'Питание'];
 
@@ -36,7 +37,7 @@ const Catalog = () => {
       const res = await API.get('/products', { params });
       setProducts(res.data.products || []);
     } catch (error) {
-      console.error('Ошибка загрузки товаров:', error);
+      setLoadError('Не удалось загрузить товары. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ const Catalog = () => {
             <button
               key={cat}
               onClick={() => handleCategoryClick(cat)}
-              className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
+              className={`min-h-[44px] px-4 py-2 text-sm rounded-full transition-colors ${
                 category === cat
                   ? 'bg-blue-900 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -134,8 +135,13 @@ const Catalog = () => {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1,2,3,4,5,6].map(n => <div key={n} className="h-72 bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200 animate-pulse" />)}
+        </div>
+      ) : loadError ? (
+        <div className="bg-red-50 border border-red-200 rounded-3xl text-center py-12 px-6 shadow-sm">
+          <div className="text-4xl mb-3">⚠️</div>
+          <p className="text-red-700">{loadError}</p>
         </div>
       ) : products.length === 0 ? (
         <div className="bg-white/85 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm text-center py-20 text-slate-400">Ничего не найдено</div>

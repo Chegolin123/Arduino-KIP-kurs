@@ -155,6 +155,8 @@ const Login = () => {
               <div className="flex gap-2">
                 <input
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
                   placeholder="Введите email"
@@ -178,6 +180,8 @@ const Login = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -190,6 +194,7 @@ const Login = () => {
             <label className="block text-sm font-medium text-slate-700 mb-1">Пароль</label>
             <input
               type="password"
+              autoComplete="current-password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"

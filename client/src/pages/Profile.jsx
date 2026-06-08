@@ -139,7 +139,7 @@ const Profile = () => {
       </div>
 
       {/* Метрики */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white/88 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 lg:p-5 shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-lg">📝</div>

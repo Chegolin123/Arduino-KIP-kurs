@@ -12,6 +12,7 @@ const Library = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,7 +27,7 @@ const Library = () => {
       const response = await API.get('/courses');
       setCourses(response.data.courses || []);
     } catch (error) {
-      console.error('Ошибка загрузки курсов:', error);
+      setLoadError('Не удалось загрузить курсы. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +75,7 @@ const Library = () => {
             <div className="h-4 bg-white/10 rounded w-80 max-w-full" />
           </div>
         <div className="animate-pulse space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4].map(n => (
               <div key={n} className="h-72 bg-white/85 backdrop-blur-sm border border-slate-200 rounded-3xl"></div>
             ))}
@@ -108,14 +109,19 @@ const Library = () => {
           <p className="text-sm sm:text-base text-blue-100/90 mt-3 max-w-2xl">Выберите курс, изучите описание и откройте обучение в один клик.</p>
         </div>
 
-        {courses.length === 0 ? (
+        {loadError ? (
+          <div className="bg-red-50 border border-red-200 rounded-3xl text-center py-12 px-6 shadow-sm">
+            <div className="text-4xl mb-3">⚠️</div>
+            <p className="text-red-700">{loadError}</p>
+          </div>
+        ) : courses.length === 0 ? (
           <div className="bg-white/85 backdrop-blur-sm rounded-3xl border border-slate-200 shadow-sm text-center py-20 px-6">
             <div className="text-6xl mb-4">📚</div>
             <h2 className="text-xl font-semibold text-slate-600 mb-2">Курсов пока нет</h2>
             <p className="text-slate-400">Курсы появятся позже</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
               <div
                 key={course.id}

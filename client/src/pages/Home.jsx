@@ -11,9 +11,11 @@ const Home = () => {
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
+    setMobileOpen(false);
     navigate('/');
   };
 
@@ -63,8 +65,97 @@ const Home = () => {
                 <Link to="/register" className="px-4 py-2 rounded-full text-sm font-semibold bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm">Регистрация</Link>
               </>
             )}
+
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant"
+              aria-label="Меню"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+            <div className="absolute top-16 right-0 w-64 bg-white rounded-bl-2xl border border-slate-200 shadow-xl p-4">
+              <nav className="space-y-1">
+                <Link
+                  to="/library"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">menu_book</span>
+                  Библиотека
+                </Link>
+                <Link
+                  to="/catalog"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+                  Каталог
+                </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">shield</span>
+                    Админ
+                  </Link>
+                )}
+              </nav>
+              <hr className="my-3 border-slate-200" />
+              {isAuthenticated ? (
+                <div className="space-y-1">
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">account_circle</span>
+                    {user?.username || 'Профиль'}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">logout</span>
+                    Выйти
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">login</span>
+                    Вход
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">person_add</span>
+                    Регистрация
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="pt-16">

@@ -103,13 +103,6 @@ const Header = () => {
                     <span className="material-symbols-outlined text-[20px]">account_circle</span>
                     {user?.username || 'Профиль'}
                   </Link>
-                  <button
-                    onClick={() => { handleLogout(); setMobileOpen(false); }}
-                    className="w-full text-left flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">logout</span>
-                    Выйти
-                  </button>
                 </>
               ) : (
                 <>

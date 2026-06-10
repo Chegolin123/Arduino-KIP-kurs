@@ -125,13 +125,6 @@ const Home = () => {
                     <span className="material-symbols-outlined text-[20px]">account_circle</span>
                     {user?.username || 'Профиль'}
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">logout</span>
-                    Выйти
-                  </button>
                 </div>
               ) : (
                 <div className="space-y-1">

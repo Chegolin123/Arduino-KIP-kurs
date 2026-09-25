@@ -58,3 +58,11 @@ design/
 *.py
 temp/
 scripts/
+# Файлы с секретами (реальные значения — только локально)
+server.env
+!.env.example
+!.server.env.example
+*.env.local
+
+# Локальная память и сессии ZCode
+.zcode/

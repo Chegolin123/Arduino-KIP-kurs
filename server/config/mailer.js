@@ -11,10 +11,16 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        user: process.env.MAIL_USER || 'kip-kurs@mail.ru',
-        pass: process.env.MAIL_PASS || 'LrwjKW1lmk3MQ1PfcBB1'
+        // Учётные данные почты — только из server.env (в репозитории их быть не должно).
+        // Если MAIL_USER/MAIL_PASS не заданы, отправка писем не заработает — это ожидаемо.
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
     }
 });
+
+if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+    console.error('❌ MAIL_USER/MAIL_PASS не заданы в server.env — письма отправляться не будут');
+}
 
 // Проверка подключения при запуске
 transporter.verify((error, success) => {
